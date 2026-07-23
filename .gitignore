@@ -1,0 +1,39 @@
+# === 系統/暫存 ===
+.DS_Store
+._*
+Thumbs.db
+~$*.xlsx
+~$*.docx
+
+# === Python（舊版 CLI 工具、目前保留但不入庫） ===
+__pycache__/
+*.pyc
+*.pyo
+libs/
+config.py
+generate_posts.py
+requirements.txt
+
+# === 輸出檔（工具跑出來的結果，不需入庫） ===
+貼文包.csv
+貼文包.md
+貼文包.xlsx
+
+# === 使用者專屬資料 ===
+copy_data.json
+sample_*.txt
+sample_*.pdf
+
+# === 內部檔案（含門市原始 Excel、TK3C 分機表等） ===
+TK3C address/
+
+# === 舊版 HTML（保留在本機使用，不入庫） ===
+促銷貼文產生器.html
+促銷貼文產生器_v2.html
+促銷貼文產生器_離線版.html
+促銷貼文產生器_離線版_v2.html
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp

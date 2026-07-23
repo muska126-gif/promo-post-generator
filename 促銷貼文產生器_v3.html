@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>促銷貼文產生器 v3.6</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg-1:#fff4ed; --bg-2:#fff0f5;
+    --card:#ffffff;
+    --ink:#1d1d1f;
+    --sub:#6e6e73;
+    --brand:#f56040;      /* 主色：Apple Pride 橘 */
+    --brand-2:#c13584;    /* 副色：粉 */
+    --brand-3:#fcaf45;    /* 亮色：金黃 */
+    --line:#f3e4dc;       /* 暖色邊線 */
+    --tint:#fdf8f5;       /* 暖色淺底（input / chip 預設） */
+    --grad:linear-gradient(135deg,#c13584 0%,#f56040 55%,#fcaf45 100%);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+       background:linear-gradient(135deg,var(--bg-1) 0%,var(--bg-2) 100%);
+       background-attachment:fixed;
+       color:var(--ink);line-height:1.6;padding:24px;min-height:100vh;}
+  .wrap{max-width:920px;margin:0 auto;}
+  h1{font-size:26px;font-weight:700;margin-bottom:4px;
+     background:var(--grad);-webkit-background-clip:text;background-clip:text;
+     -webkit-text-fill-color:transparent;color:transparent;display:inline-block;}
+  .sub{color:var(--sub);font-size:14px;margin-bottom:24px;}
+  .card{background:var(--card);border-radius:16px;padding:22px;margin-bottom:18px;
+        box-shadow:0 1px 3px rgba(193,53,132,.08), 0 4px 16px rgba(245,96,64,.06);}
+  .card h2{font-size:15px;font-weight:600;margin-bottom:14px;color:var(--ink);}
+  #drop{border:2px dashed var(--line);border-radius:14px;padding:38px;text-align:center;
+        cursor:pointer;transition:.2s;color:var(--sub);background:var(--tint);}
+  #drop.hover{border-color:var(--brand);background:#fff0e8;color:var(--brand);}
+  #drop b{color:var(--brand);}
+  .row{display:flex;gap:14px;flex-wrap:wrap;}
+  .field{flex:1;min-width:200px;}
+  label{display:block;font-size:13px;color:var(--sub);margin-bottom:6px;}
+  input[type=text],textarea{width:100%;padding:10px 12px;border:1px solid var(--line);
+        border-radius:10px;font-size:14px;font-family:inherit;background:var(--tint);}
+  input[type=text]:focus,textarea:focus{outline:none;border-color:var(--brand);background:#fff;}
+  textarea{resize:vertical;min-height:70px;}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{padding:7px 16px;border:1px solid var(--line);border-radius:20px;cursor:pointer;
+        font-size:14px;user-select:none;background:var(--tint);transition:.15s;}
+  .chip:hover{border-color:var(--brand);color:var(--brand);}
+  .chip.on{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 2px 6px rgba(245,96,64,.3);}
+  .chip.on:hover{color:#fff;}
+  /* 平台 chip 維持各自品牌色（避免失去識別） */
+  .chip[data-p="fb"].on{background:#1877f2;box-shadow:0 2px 6px rgba(24,119,242,.3);}
+  .chip[data-p="ig"].on{background:linear-gradient(135deg,#833ab4 0%,#c13584 40%,#f56040 75%,#fcaf45 100%);box-shadow:0 2px 6px rgba(193,53,132,.3);}
+  .chip[data-p="line"].on{background:#06c755;box-shadow:0 2px 6px rgba(6,199,85,.3);}
+  .chip[data-p="fb"]:hover{border-color:#1877f2;color:#1877f2;}
+  .chip[data-p="ig"]:hover{border-color:#c13584;color:#c13584;}
+  .chip[data-p="line"]:hover{border-color:#06c755;color:#06c755;}
+  .chip[data-p].on:hover{color:#fff;}
+  /* === 系列分類快速按鈕 === */
+  .cat-bar{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 6px;align-items:center;}
+  .cat-bar .cat-label{font-size:12px;color:var(--sub);margin-right:2px;font-weight:500;}
+  .cat-btn{font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--line);
+           border-radius:18px;padding:6px 14px;background:#fff;color:var(--ink);
+           user-select:none;transition:.15s;}
+  .cat-btn:hover{border-color:var(--brand);color:var(--brand);background:var(--tint);
+                 transform:translateY(-1px);box-shadow:0 2px 6px rgba(245,96,64,.15);}
+  .cat-btn.disabled{opacity:.35;cursor:not-allowed;pointer-events:none;}
+  .cat-btn .cat-num{display:inline-block;font-size:11px;color:var(--sub);
+                    margin-left:4px;font-weight:400;}
+  .cat-btn:hover .cat-num{color:var(--brand);}
+  /* 合併切換按鈕 */
+  .cat-btn.toggle.on{background:var(--brand);color:#fff;border-color:var(--brand);
+                     box-shadow:0 2px 6px rgba(245,96,64,.3);}
+  .cat-btn.toggle.on:hover{background:var(--brand);color:#fff;transform:none;}
+  .cat-btn.toggle.on .cat-num{color:rgba(255,255,255,.8);}
+  .btn{background:var(--grad);color:#fff;border:none;padding:12px 22px;border-radius:12px;
+       font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(245,96,64,.3);
+       transition:.15s;}
+  .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 4px 12px rgba(245,96,64,.4);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;}
+  .btn.ghost{background:#fff;color:var(--brand);border:1px solid var(--brand);box-shadow:none;}
+  .btn.ghost:hover:not(:disabled){background:var(--tint);}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;}
+  .stat{color:var(--sub);font-size:13px;margin-left:auto;}
+  .post{border:1px solid var(--line);border-radius:14px;margin-bottom:14px;overflow:hidden;background:#fff;}
+  .post-h{background:var(--tint);padding:10px 16px;font-weight:600;font-size:14px;
+          display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);gap:10px;flex-wrap:wrap;}
+  .post-h .left{display:flex;align-items:center;gap:10px;flex:1;min-width:200px;}
+  .price{color:var(--brand);font-weight:600;}
+  .plat{padding:14px 16px;border-bottom:1px solid #f0f0f2;}
+  .plat:last-child{border-bottom:none;}
+  .plat-tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;
+            margin-bottom:6px;vertical-align:middle;}
+  .fb{background:#e7f0fd;color:#1877f2;} .ig{background:#fde7f3;color:#c13584;}
+  .line{background:#e6f6e6;color:#06c755;}
+  pre{white-space:pre-wrap;font-family:inherit;font-size:14px;padding:6px;border-radius:6px;
+      border:1px dashed transparent;transition:.15s;min-height:1.6em;}
+  pre[contenteditable="true"]:hover{border-color:var(--line);background:var(--tint);}
+  pre[contenteditable="true"]:focus{outline:none;border-color:var(--brand);background:#fff8f3;}
+  .plat-actions{float:right;display:flex;gap:6px;}
+  .mini-btn{font-size:12px;color:var(--brand);cursor:pointer;border:1px solid var(--line);
+            border-radius:6px;padding:3px 10px;background:#fff;user-select:none;}
+  .mini-btn:hover{background:var(--tint);border-color:var(--brand);}
+  .mini-btn.warn{color:#c0392b;}
+  .mini-btn.warn:hover{background:#fdf0ed;}
+  .hide{display:none;}
+  .hint{font-size:12px;color:var(--sub);margin-top:8px;}
+  .badge{display:inline-block;font-size:11px;color:#fff;background:var(--grad);
+         padding:2px 10px;border-radius:10px;margin-left:6px;font-weight:700;letter-spacing:1px;}
+
+  /* === 圖片渲染舞台（隱藏在畫面外，html2canvas 會擷取） === */
+  #stage{position:fixed;left:-99999px;top:0;pointer-events:none;}
+  .img-card{width:1080px;height:1080px;padding:80px 70px 70px;color:#fff;
+            font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+            display:flex;flex-direction:column;position:relative;overflow:hidden;}
+  .img-fb{background:linear-gradient(135deg,#1877f2 0%,#0a4cb0 100%);}
+  .img-ig{background:linear-gradient(135deg,#833ab4 0%,#c13584 40%,#f56040 75%,#fcaf45 100%);}
+  .img-line{background:linear-gradient(135deg,#06c755 0%,#048a3d 100%);}
+  .img-card .ic-top{display:flex;align-items:center;gap:24px;}
+  .img-card .ic-emo{font-size:96px;line-height:1;}
+  .img-card .ic-name{font-size:48px;font-weight:800;letter-spacing:1px;}
+  .img-card .ic-platform{position:absolute;top:36px;right:42px;font-size:18px;font-weight:700;
+            background:rgba(255,255,255,.2);padding:6px 16px;border-radius:14px;letter-spacing:2px;}
+  .img-card .ic-hook{margin-top:48px;font-size:60px;font-weight:800;line-height:1.25;}
+  .img-card .ic-sell{margin-top:24px;font-size:30px;opacity:.92;line-height:1.5;}
+  .img-card .ic-box{margin-top:40px;background:rgba(255,255,255,.16);border-radius:24px;padding:32px 36px;}
+  .img-card .ic-camp{font-size:30px;line-height:1.4;}
+  .img-card .ic-price{font-size:64px;font-weight:800;margin-top:12px;letter-spacing:1px;}
+  .img-card .ic-colors{margin-top:14px;font-size:22px;opacity:.85;}
+  .img-card .ic-foot{margin-top:auto;font-size:24px;opacity:.95;line-height:1.6;white-space:pre-line;}
+  .img-card .ic-deadline{display:inline-block;background:rgba(0,0,0,.28);padding:8px 18px;
+            border-radius:14px;font-weight:700;margin-bottom:16px;font-size:24px;}
+
+  /* === 合併分類圖卡（動態高度，直式版型） === */
+  .img-merged{width:1080px;padding:60px 60px 50px;color:#fff;box-sizing:border-box;
+              font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+              display:flex;flex-direction:column;position:relative;}
+  .img-merged .ic-platform{position:absolute;top:36px;right:42px;font-size:18px;font-weight:700;
+              background:rgba(255,255,255,.2);padding:6px 16px;border-radius:14px;letter-spacing:2px;}
+  .im-head{display:flex;align-items:center;gap:24px;margin-bottom:32px;padding-bottom:26px;
+           border-bottom:2px solid rgba(255,255,255,.32);}
+  .im-emo{font-size:88px;line-height:1;}
+  .im-title-block{flex:1;min-width:0;}
+  .im-cat{font-size:56px;font-weight:800;line-height:1.15;letter-spacing:1px;}
+  .im-subtitle{font-size:26px;opacity:.9;margin-top:6px;}
+  .im-deadline{background:rgba(0,0,0,.3);padding:12px 20px;border-radius:14px;
+               font-size:24px;font-weight:700;white-space:nowrap;}
+  .im-list{display:flex;flex-direction:column;gap:16px;}
+  .im-item{background:rgba(255,255,255,.15);border-radius:20px;padding:22px 28px;}
+  .im-item-row{display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap;}
+  .im-item-emoji{font-size:36px;line-height:1;}
+  .im-item-name{font-size:34px;font-weight:800;flex:1;min-width:0;letter-spacing:.5px;}
+  .im-item-price{font-size:32px;font-weight:800;letter-spacing:1px;
+                 background:rgba(0,0,0,.32);padding:6px 16px;border-radius:12px;}
+  .im-item-sell{font-size:22px;opacity:.92;line-height:1.55;margin-bottom:8px;}
+  .im-item-camp{font-size:20px;opacity:.9;}
+  .im-foot{margin-top:28px;padding-top:22px;border-top:2px solid rgba(255,255,255,.32);
+           font-size:24px;line-height:1.75;white-space:pre-line;opacity:.95;}
+
+  /* === 文案素材庫編輯器 === */
+  .copy-status{font-size:12px;padding:3px 10px;border-radius:10px;margin-left:8px;}
+  .copy-status.default{background:#f0f0f2;color:var(--sub);}
+  .copy-status.custom{background:#fde9e6;color:#c0392b;}
+  .copy-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .copy-actions .btn{padding:8px 14px;font-size:13px;}
+  .copy-table{width:100%;border-collapse:collapse;margin-top:14px;font-size:13px;
+              table-layout:fixed;}
+  .copy-table th,.copy-table td{padding:8px;border-bottom:1px solid var(--line);
+              text-align:left;vertical-align:top;}
+  .copy-table th{background:var(--tint);font-weight:600;font-size:12px;color:var(--sub);}
+  .copy-table col.series{width:170px;}
+  .copy-table td.series-name{font-weight:600;color:var(--ink);white-space:nowrap;
+              overflow:hidden;text-overflow:ellipsis;}
+  .copy-table textarea{width:100%;border:1px solid transparent;background:transparent;
+              resize:vertical;min-height:34px;font-family:inherit;font-size:13px;
+              padding:5px 7px;border-radius:6px;line-height:1.5;color:var(--ink);}
+  .copy-table textarea:hover{border-color:var(--line);background:var(--tint);}
+  .copy-table textarea:focus{outline:none;border-color:var(--brand);background:#fff8f3;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📣 促銷貼文產生器 <span class="badge">v3.6 · 2026-07-09</span></h1>
+  <p class="sub">把當期促銷 PDF 拖進來 → 自動產出 FB / IG / LINE 貼文（可線上編輯、可重新產生、可匯出 PNG 圖片）</p>
+
+  <div class="card">
+    <h2>① 上傳促銷 PDF</h2>
+    <div id="drop">📄 把 PDF 拖到這裡，或 <b>點擊選擇檔案</b><br>
+      <span style="font-size:12px">（也支援純文字 .txt）</span></div>
+    <input type="file" id="file" accept=".pdf,.txt" class="hide">
+    <div class="hint" id="fileinfo"></div>
+
+    <div id="series-filter" class="hide" style="margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;">
+        <label style="margin:0;">偵測到的系列（點擊可切換是否產生）<span id="series-summary" style="color:var(--brand);font-weight:600;margin-left:4px;"></span></label>
+        <div style="display:flex;gap:6px;">
+          <span class="mini-btn" id="series-all">全選</span>
+          <span class="mini-btn" id="series-none">全不選</span>
+          <span class="mini-btn" id="series-invert">反選</span>
+        </div>
+      </div>
+      <div class="cat-bar" id="cat-bar">
+        <span class="cat-label">快速分類：</span>
+        <span class="cat-btn" data-cat="📱 iPhone">📱 iPhone</span>
+        <span class="cat-btn" data-cat="💻 Mac">💻 Mac</span>
+        <span class="cat-btn" data-cat="⌚ Apple Watch">⌚ Apple Watch</span>
+        <span class="cat-btn" data-cat="📲 iPad">📲 iPad</span>
+        <span class="cat-btn" data-cat="🎧 配件">🎧 配件</span>
+        <span style="flex:1;"></span>
+        <span class="cat-btn toggle" id="merge-toggle" title="開啟後，同分類的多個產品會合併成單一貼文">🔗 合併同分類</span>
+      </div>
+      <div class="chips" id="series-chips"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>② 設定</h2>
+    <div class="row">
+      <div class="field">
+        <label>活動期間</label>
+        <input type="text" id="period" placeholder="例：6/1–6/18">
+      </div>
+      <div class="field">
+        <label>發布平台</label>
+        <div class="chips" id="plats">
+          <div class="chip on" data-p="fb">FB</div>
+          <div class="chip on" data-p="ig">IG</div>
+          <div class="chip on" data-p="line">LINE</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>文案風格</label>
+        <div class="chips" id="tones">
+          <div class="chip on" data-t="casual">活潑小編風</div>
+          <div class="chip" data-t="pro">專業理性風</div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="row" style="margin-bottom:8px;">
+        <div class="field" style="max-width:280px;">
+          <label>🏬 店號（自動帶入門市資料 · 共 291 家）</label>
+          <input type="text" id="storecode" list="storecodes" placeholder="例：219（內湖旗艦店）" autocomplete="off">
+          <datalist id="storecodes"></datalist>
+          <div class="hint" id="storecode-status"></div>
+        </div>
+        <div class="field" style="max-width:140px;align-self:flex-end;">
+          <span class="mini-btn" id="store-reapply" title="重新從店號套用門市資訊">🔄 重新套用</span>
+          <span class="mini-btn" id="store-clear" title="清空門市資訊">🗑️ 清空</span>
+        </div>
+      </div>
+      <label>門市資訊（會根據店號自動帶入；可手動編輯）</label>
+      <textarea id="store" placeholder="📍 門市：台北店&#10;☎️ 電話：02-1234-5678&#10;🗺️ 地址：xxx"></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>③ 文案素材庫 <span class="copy-status default" id="copy-status">使用預設</span></h2>
+    <div class="copy-actions">
+      <button class="btn ghost" id="copy-toggle">📝 編輯文案</button>
+      <button class="btn ghost" id="copy-export">💾 下載 JSON</button>
+      <button class="btn ghost" id="copy-import-btn">📥 載入 JSON</button>
+      <input type="file" id="copy-import" accept=".json,application/json" class="hide">
+      <button class="btn ghost" id="copy-reset">🔄 重置為預設</button>
+    </div>
+    <div class="hint">編輯後會自動存到瀏覽器（localStorage）；下載 JSON 可備份或在其他電腦使用。</div>
+    <div id="copy-editor" class="hide" style="margin-top:14px;">
+      <div class="chips" id="copy-tone-tabs">
+        <div class="chip on" data-t="casual">活潑小編風</div>
+        <div class="chip" data-t="pro">專業理性風</div>
+      </div>
+      <table class="copy-table">
+        <colgroup><col class="series"><col><col></colgroup>
+        <thead><tr><th>系列</th><th>Hook（吸睛開頭）</th><th>Sell（賣點描述）</th></tr></thead>
+        <tbody id="copy-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="actions">
+      <button class="btn" id="gen" disabled>✨ 產生貼文</button>
+      <button class="btn ghost hide" id="dlcsv">⬇️ 下載 Excel(CSV)</button>
+      <button class="btn ghost hide" id="dlmd">⬇️ 下載 Markdown</button>
+      <button class="btn ghost hide" id="dlpng">📦 下載全部圖片(PNG)</button>
+      <span class="stat" id="stat"></span>
+    </div>
+    <div class="hint">💡 貼文產生後可以直接點擊文字進行編輯；每個平台都有「重新產生」和「下載 PNG」按鈕。</div>
+  </div>
+
+  <div id="out"></div>
+</div>
+
+<div id="stage"></div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+/* ===== 門市資料庫（TK3C 公開分店資訊 · 291 家門市 · 僅含店名/電話/地址） ===== */
+const STORES = {
+  "001":{name:"新光華店",phone:"07-2262335",address:"高雄市苓雅區光華一路160號"},
+  "004":{name:"佳里店",phone:"06-7232181",address:"台南市佳里區延平路91號"},
+  "005":{name:"中華店",phone:"06-3121632",address:"台南市永康區中華路149號"},
+  "008":{name:"竹南店",phone:"03-7484333",address:"苗栗縣竹南鎮環市路二段132號"},
+  "009":{name:"華榮店",phone:"07-5527930",address:"高雄市鼓山區華榮路345號"},
+  "010":{name:"安南店",phone:"06-2500245",address:"台南市安南區海佃路一段329號"},
+  "016":{name:"鶯歌店",phone:"02-26786697",address:"新北市鶯歌區中正一路115號B1.1樓"},
+  "024":{name:"北港店",phone:"05-7732531",address:"雲林縣北港鎮民享路13號,15號"},
+  "026":{name:"金鼎店",phone:"07-3508195",address:"高雄市三民區鼎強街93-1,95號"},
+  "027":{name:"右昌店",phone:"07-3643207",address:"高雄市楠梓區德民路836號"},
+  "028":{name:"五甲店",phone:"07-7150122",address:"高雄市鳳山區五甲二路219號"},
+  "029":{name:"永華店",phone:"06-2992282",address:"台南市安平區永華路一段350號"},
+  "030":{name:"新莊店",phone:"02-22771882",address:"新北市新莊區中平路108號"},
+  "031":{name:"新岡山店",phone:"07-6224689",address:"高雄市岡山區溪東路68號2F"},
+  "035":{name:"仁德店",phone:"06-2490662",address:"台南市仁德區中山路537號"},
+  "040":{name:"羅東店",phone:"03-9558851",address:"宜蘭縣羅東鎮興東南路176號"},
+  "041":{name:"公益店",phone:"04-23190628",address:"台中市南屯區公益路二段125號"},
+  "050":{name:"屏東店",phone:"08-7326639",address:"屏東縣屏東市自由路585號"},
+  "061":{name:"彰化店",phone:"04-7366906",address:"彰化縣彰化市彰新路一段138巷1號"},
+  "062":{name:"板橋店",phone:"02-82527727",address:"新北市板橋區莊敬路34號"},
+  "067":{name:"嘉義店",phone:"05-2833977",address:"嘉義市興業西路348號"},
+  "071":{name:"竹山店",phone:"04-92632311",address:"南投縣竹山鎮大禮路89號"},
+  "075":{name:"潮州店",phone:"08-7887313",address:"屏東縣潮州鎮延平路2號1.2.3樓"},
+  "076":{name:"中和店",phone:"02-89231023",address:"新北市中和區中和路326號1.2樓"},
+  "078":{name:"新竹店",phone:"03-5343395",address:"新竹市經國路一段788.790號"},
+  "080":{name:"旗山店",phone:"07-6627226",address:"高雄市旗山區中華路1036號"},
+  "081":{name:"東港店",phone:"08-8339417",address:"屏東縣東港鎮中山路2~41.42.43號"},
+  "082":{name:"台東店",phone:"08-9361008",address:"台東縣台東市新生路465號"},
+  "083":{name:"竹東店",phone:"03-5948678",address:"新竹縣竹東鎮長春路三段208號1F"},
+  "087":{name:"新埔店",phone:"02-82512799",address:"新北市板橋區雨農路19號"},
+  "089":{name:"苗栗店",phone:"03-7368478",address:"苗栗縣苗栗市英才路65號"},
+  "101":{name:"蘆洲旗艦店",phone:"02-28482486",address:"新北市蘆洲區中山一路297號"},
+  "103":{name:"太平店",phone:"04-22754692",address:"台中市太平區中山路三段49號"},
+  "104":{name:"金門店",phone:"08-2372280",address:"金門縣金城鎮環島西路一段65號"},
+  "105":{name:"二林店",phone:"04-8955862",address:"彰化縣二林鎮後厝里吉昌二街77號"},
+  "108":{name:"桃鶯店",phone:"03-3777966",address:"桃園市桃園區桃鶯路196號1樓之1"},
+  "111":{name:"林園店",phone:"07-6465690",address:"高雄市林園區東林西路35號1.2樓"},
+  "116":{name:"石牌店",phone:"02-28220221",address:"台北市北投區石牌路二段99巷1號"},
+  "117":{name:"淡水店",phone:"02-26255206",address:"新北市淡水區大忠街89號1F"},
+  "119":{name:"新營三民店",phone:"06-6379526",address:"台南市新營區三民路188號"},
+  "123":{name:"光復店",phone:"03-5166201",address:"新竹市光復路二段194巷19號"},
+  "125":{name:"楊梅店",phone:"03-4818333",address:"桃園市楊梅區中山北路二段23巷2號"},
+  "126":{name:"士林旗艦店",phone:"02-28815252",address:"台北市士林區中正路115號"},
+  "129":{name:"彰化中正店",phone:"04-7203996",address:"彰化縣彰化市中正路二段451號"},
+  "131":{name:"玉里店",phone:"03-8888446",address:"花蓮縣玉里鎮興國路二段62號"},
+  "132":{name:"自由店",phone:"07-5565878",address:"高雄市左營區自由二路329號1-2樓"},
+  "133":{name:"梧棲店",phone:"04-26570169",address:"台中市梧棲區文化路二段205號"},
+  "134":{name:"蘇澳店",phone:"03-9952969",address:"宜蘭縣蘇澳鎮中山路一段152號"},
+  "136":{name:"虎尾店",phone:"05-6360993",address:"雲林縣虎尾鎮復興路226號1-2樓"},
+  "137":{name:"恆春店",phone:"08-8882008",address:"屏東縣恆春鎮恆公路1028號"},
+  "138":{name:"麻豆店",phone:"06-5710617",address:"台南市麻豆區中山路143號"},
+  "139":{name:"橋頭店",phone:"07-6125945",address:"高雄市橋頭區成功南路148巷1號"},
+  "141":{name:"東勢店",phone:"04-25882181",address:"台中市東勢區豐勢路459號"},
+  "142":{name:"宜蘭店",phone:"03-9325775",address:"宜蘭縣宜蘭市宜興路一段19號1-3樓"},
+  "143":{name:"頭份店",phone:"03-7691115",address:"苗栗縣頭份鎮自強路77號"},
+  "145":{name:"朴子店",phone:"05-3707888",address:"嘉義縣朴子市四維路2段58號"},
+  "146":{name:"嘉義旗艦店",phone:"05-2319355",address:"嘉義市文化路501號"},
+  "147":{name:"天母店",phone:"02-28738993",address:"台北市士林區天母北路３０號"},
+  "151":{name:"苑裡店",phone:"03-7860005",address:"苗栗縣苑裡鎮新興路39號"},
+  "154":{name:"台中旗艦店",phone:"04-22625557",address:"台中市南區復興路一段270號"},
+  "156":{name:"鹿港店",phone:"04-7769118",address:"彰化縣福興鄉彰鹿路七段612號"},
+  "157":{name:"永華二店",phone:"06-2939388",address:"台南市安平區永華路2段35號"},
+  "158":{name:"草屯店",phone:"04-92321118",address:"南投縣草屯鎮博愛路501號"},
+  "159":{name:"大里二店",phone:"04-24960268",address:"台中市大里區中興路一段298-1號"},
+  "161":{name:"烏日店",phone:"04-23360900",address:"台中市烏日區中山路二段110號"},
+  "162":{name:"大園店",phone:"03-3868938",address:"桃園市大園區中正東路166號"},
+  "163":{name:"澎湖店",phone:"06-9271919",address:"澎湖縣馬公市文光路85號1樓及2樓"},
+  "164":{name:"林邊店",phone:"08-8757856",address:"屏東縣林邊鄉中山路368號"},
+  "165":{name:"新化店",phone:"06-5983976",address:"台南市新化區中山路５３０號"},
+  "168":{name:"善化店",phone:"06-5853888",address:"台南市善化區中正路412號"},
+  "173":{name:"大溪店",phone:"03-3872788",address:"桃園市大溪區中央路99號"},
+  "174":{name:"龍潭店",phone:"03-4995057",address:"桃園市龍潭區中興路433號"},
+  "175":{name:"復北店",phone:"02-87120139",address:"台北市松山區復興北路325號"},
+  "176":{name:"三民店",phone:"02-22858008",address:"新北市蘆洲區三民路535號"},
+  "177":{name:"崇德店",phone:"06-2682112",address:"台南市東區中華東路三段176號"},
+  "179":{name:"木新店",phone:"02-29398555",address:"台北市文山區木新路3段212號"},
+  "181":{name:"汐止店",phone:"02-86926806",address:"新北市汐止區大同路二段 129號"},
+  "182":{name:"潭子店",phone:"04-25327258",address:"台中市潭子區潭興路三段102號"},
+  "183":{name:"五股店",phone:"02-22911009",address:"新北市五股區工商路66號"},
+  "184":{name:"阿蓮店",phone:"07-6320088",address:"高雄市阿蓮區忠孝路382號"},
+  "185":{name:"後龍店",phone:"03-7727338",address:"苗栗縣後龍鎮中山路203之一號(及205號)"},
+  "197":{name:"忠孝店",phone:"02-87736308",address:"台北市大安區忠孝東路四段212號B1"},
+  "198":{name:"化成店",phone:"02-29908799",address:"新北市新莊區化成路189號"},
+  "199":{name:"瑞隆店",phone:"07-7236808",address:"高雄市前鎮區瑞隆路401號"},
+  "209":{name:"建國店",phone:"07-2381250",address:"高雄市三民區建國二路226號,228號"},
+  "212":{name:"鳳山店",phone:"07-7413882",address:"高雄市鳳山區中山路138之7,8,9號"},
+  "214":{name:"南京旗艦店",phone:"02-25715966",address:"台北市中山區南京東路二段6號"},
+  "218":{name:"桃園旗艦店",phone:"03-3316658",address:"桃園市桃園區中山東路51號"},
+  "219":{name:"內湖旗艦店",phone:"02-27955270",address:"台北市內湖區堤頂大道一段331號"},
+  "221":{name:"信義店",phone:"02-27202289",address:"台北市信義區信義路4段375號"},
+  "222":{name:"埔里店",phone:"04-92999900",address:"南投縣埔里鎮北環路131號1-3樓"},
+  "223":{name:"竹北店",phone:"03-5528770",address:"新竹縣竹北市三民路417號1F"},
+  "226":{name:"大甲店",phone:"04-26881618",address:"台中市大甲區民生路13號"},
+  "228":{name:"基隆旗艦店",phone:"02-24215860",address:"基隆市中正區義一路18號"},
+  "231":{name:"斗南店",phone:"05-5955880",address:"雲林縣斗南鎮南昌西路109號"},
+  "232":{name:"南投店",phone:"04-92208010",address:"南投縣南投市果稟路101號"},
+  "235":{name:"文德店",phone:"02-87518699",address:"台北市內湖區文德路212號"},
+  "237":{name:"內埔店",phone:"08-7781230",address:"屏東縣內埔鄉學人路678號"},
+  "243":{name:"安康店",phone:"02-86660400",address:"新北市新店區安康路2段161號"},
+  "244":{name:"斗六店",phone:"05-5361551",address:"雲林縣斗六市中堅西路64號"},
+  "245":{name:"中和旗艦店",phone:"02-22431996",address:"新北市中和區中山路二段297號"},
+  "249":{name:"南崁店",phone:"03-3126605",address:"桃園市蘆竹區南崁路一段7號1-2樓"},
+  "252":{name:"田中店",phone:"04-8753955",address:"彰化縣田中鎮中正路570號"},
+  "257":{name:"民權店",phone:"02-29411679",address:"新北市永和區民權路53號"},
+  "258":{name:"學甲店",phone:"06-7833588",address:"台南市學甲區中山路100號"},
+  "259":{name:"新店中正店",phone:"02-22193735",address:"新北市新店區中正路424號"},
+  "261":{name:"后里店",phone:"04-25581869",address:"台中市 后里區甲后路一段 385、387號"},
+  "262":{name:"鹽行店",phone:"06-2433386",address:"台南市永康區中正北路45號"},
+  "271":{name:"興隆店",phone:"02-29330445",address:"台北市文山區興隆路二段252號B1"},
+  "274":{name:"沙鹿店",phone:"04-26631038",address:"台中市沙鹿區中山路462號"},
+  "275":{name:"楠梓店",phone:"07-3512336",address:"高雄市楠梓區鳳楠路268號"},
+  "276":{name:"寧夏店",phone:"02-25562216",address:"台北市大同區民生西路204號1-3樓"},
+  "277":{name:"大湳店",phone:"03-2180002",address:"桃園市八德區福國北街75號"},
+  "278":{name:"清水店",phone:"04-26269399",address:"台中市清水區中華路413號1F"},
+  "283":{name:"垂楊店",phone:"05-2770758",address:"嘉義市東區垂楊路52號"},
+  "284":{name:"員林大同店",phone:"04-8320012",address:"彰化縣員林鎮大同路一段199號"},
+  "285":{name:"金城店",phone:"02-22630211",address:"新北市土城區金城路三段200號"},
+  "286":{name:"高美店",phone:"07-5228638",address:"高雄市鼓山區美術館路38號-40號1F"},
+  "287":{name:"吉祥店",phone:"02-25280156",address:"台北市松山區南京東路五段40號2F"},
+  "288":{name:"小北店",phone:"06-2823857",address:"台南市北區西門路四段2號1F-2F"},
+  "289":{name:"龍潭中正店",phone:"03-4701033",address:"桃園市龍潭區中正路35.37.39號1-2F"},
+  "291":{name:"鳳山二店",phone:"07-7762800",address:"高雄市鳳山區建國路二段178號"},
+  "292":{name:"通化店",phone:"02-27328090",address:"台北市大安區通化街198號1F"},
+  "293":{name:"金門山外店",phone:"08-2337539",address:"金門縣金湖鎮中正路74.76號1-2F"},
+  "295":{name:"溪湖店",phone:"04-8815662",address:"彰化縣溪湖鎮彰水路二段839.841.843號1F-3F"},
+  "296":{name:"霧峰店",phone:"04-23331638",address:"台中市霧峰區中正路1098號1F-3F"},
+  "299":{name:"台南旗艦店",phone:"06-2891178",address:"台南市仁德區大同路三段665號"},
+  "302":{name:"大林店",phone:"05-2649805",address:"嘉義縣大林鎮祥和路178號1F"},
+  "303":{name:"福山店",phone:"07-3452125",address:"高雄市左營區自由四路126號1F"},
+  "307":{name:"安樂店",phone:"02-24300328",address:"基隆市安樂區麥金路727號"},
+  "308":{name:"新市店",phone:"06-5890809",address:"台南市新市區仁愛街79-3號"},
+  "309":{name:"力行店",phone:"07-7825328",address:"高雄市大寮區力行路113號"},
+  "313":{name:"豐樂店",phone:"04-23893088",address:"台中市南屯區永春東路820號1-2F"},
+  "314":{name:"南勢角店",phone:"02-86682968",address:"新北市中和區景新街340號1~3F"},
+  "317":{name:"關廟店",phone:"06-5965909",address:"台南市關廟區南雄路一段1039號1-2F"},
+  "318":{name:"麥寮店",phone:"05-6931755",address:"雲林縣麥寮鄉中興路76號1-2F"},
+  "321":{name:"北斗店",phone:"04-8881866",address:"彰化縣北斗鎮光華街31號"},
+  "322":{name:"三重仁愛店",phone:"02-22863066",address:"新北市三重區仁愛街676.678號1-2F"},
+  "323":{name:"健行店",phone:"04-22081618",address:"台中市北區健行路466號1F~3F"},
+  "324":{name:"新豐店",phone:"03-5575565",address:"新竹縣新豐鄉新興路58.60號"},
+  "325":{name:"台東大同店",phone:"08-9351918",address:"台東縣台東市大同路147號1F-2F"},
+  "328":{name:"豐南店",phone:"04-25318133",address:"台中市豐原區中山路130號"},
+  "329":{name:"南崗店",phone:"04-92207277",address:"南投縣南投市南崗二路464號1F-2F"},
+  "333":{name:"三峽大學店",phone:"02-86723119",address:"新北市三峽區大學路92號及96號1F-2F"},
+  "336":{name:"中興店",phone:"04-22775333",address:"台中市太平區中興東路157號1F-2F"},
+  "337":{name:"民雄店",phone:"05-2200238",address:"嘉義縣民雄鄉建國路三段189.191.193.195號1F-3F"},
+  "341":{name:"中和中山店",phone:"02-22230886",address:"新北市中和區中山路三段98號B1~2F"},
+  "343":{name:"龍安店",phone:"03-3690336",address:"桃園市桃園區龍安街117號1F-2F"},
+  "345":{name:"灣裡店",phone:"06-2625099",address:"台南市南區興南街70號1F~2F"},
+  "348":{name:"中壢龍岡店",phone:"03-4280898",address:"桃園市中壢區龍岡路一段140.142號1F-2F"},
+  "349":{name:"萬大店",phone:"02-23012958",address:"台北市萬華區萬大路331號1F"},
+  "351":{name:"花蓮建國店",phone:"03-8577085",address:"花蓮縣吉安鄉建國路一段119之1 119之2號1F"},
+  "353":{name:"關西店",phone:"03-5877287",address:"新竹縣關西鎮正義路182號"},
+  "355":{name:"新店中興店",phone:"02-89199669",address:"新北市新店區中興路三段3號B1"},
+  "359":{name:"觀音店",phone:"03-4836799",address:"桃園市觀音區大觀路二段239.241號"},
+  "361":{name:"秀水店",phone:"04-7688977",address:"彰化縣秀水鄉彰水路二段578號"},
+  "363":{name:"歸仁店",phone:"06-2305377",address:"台南市歸仁區中山路三段158.160號"},
+  "364":{name:"竹北自強店",phone:"03-6576988",address:"新竹縣竹北市自強南路68號"},
+  "365":{name:"民雄文化店",phone:"05-2262600",address:"嘉義縣民雄鄉文化路50號1-2F"},
+  "367":{name:"東山店",phone:"04-24377378",address:"台中市北屯區東山路一段156-12號1-2F"},
+  "371":{name:"新文心店",phone:"04-22468698",address:"台中市北屯區文心路四段671號1F.673號B1"},
+  "374":{name:"林口文化店",phone:"02-26089201",address:"新北市林口區文化二路1段269號1樓、271號1樓、2樓"},
+  "376":{name:"里港店",phone:"08-7721755",address:"屏東縣里港鄉永樂路18號1F-2F"},
+  "378":{name:"路竹店",phone:"07-6073618",address:"高雄市路竹區中正路182號"},
+  "379":{name:"新吉安店",phone:"03-8512058",address:"花蓮縣吉安鄉中央路二段391號1-2F"},
+  "382":{name:"埔墘店",phone:"02-29512838",address:"新北市板橋區中山路二段361號B1-1F"},
+  "384":{name:"八里店",phone:"02-26108158",address:"新北市八里區中山路二段522號1-2F"},
+  "388":{name:"枋寮店",phone:"08-8782855",address:"屏東縣枋寮鄉中興路22-9號1F-4F"},
+  "392":{name:"新北投店",phone:"02-28983778",address:"台北市北投區中和街14號1樓"},
+  "396":{name:"水上店",phone:"05-2602100",address:"嘉義縣水上鄉中興路215號1F"},
+  "397":{name:"板橋溪北店",phone:"02-26831800",address:"新北市板橋區溪北路118號1-2F與116號2F"},
+  "398":{name:"龜山店",phone:"03-3295699",address:"桃園市龜山區萬壽路二段1219、1219-1號"},
+  "402":{name:"楊梅新成店",phone:"03-4751388",address:"桃園市楊梅區新成路204號1F"},
+  "403":{name:"瑞芳店",phone:"02-24061138",address:"新北市瑞芳區明燈路三段104號1.2號"},
+  "404":{name:"七堵店",phone:"02-24555798",address:"基隆市七堵區光明路118號、120號"},
+  "405":{name:"湖口店",phone:"03-5997178",address:"新竹縣湖口鄉忠孝路5號1、2樓"},
+  "407":{name:"永春店",phone:"02-27281599",address:"台北市信義區大道路16號、16號地下1樓"},
+  "408":{name:"大竹店",phone:"03-3133868",address:"桃園市蘆竹區上興路58號"},
+  "412":{name:"新屋店",phone:"03-4871758",address:"桃園市新屋區中山路343號"},
+  "414":{name:"樂業店",phone:"02-27383608",address:"台北市大安區樂業街127號B1.1F"},
+  "415":{name:"金山店",phone:"02-24981108",address:"新北市金山區中山路69號1F"},
+  "417":{name:"基隆信義店",phone:"02-24661959",address:"基隆市信義區東信路198號1樓及夾層"},
+  "421":{name:"汐止中興店",phone:"02-26926696",address:"新北市汐止區中興路168號地下1樓"},
+  "426":{name:"玉井店",phone:"06-5743189",address:"台南市玉井區中華路204號1樓"},
+  "437":{name:"台北西湖店",phone:"02-27993156",address:"台北市內湖區內湖路一段323巷11號1F.B1"},
+  "439":{name:"土庫店",phone:"05-6621066",address:"雲林縣土庫鎮建國路23-5號"},
+  "441":{name:"大直店",phone:"02-25321059",address:"台北市中山區北安路633號1F、B1"},
+  "442":{name:"社子店",phone:"02-28106122",address:"台北市士林區延平北路5段282號B1.1F"},
+  "443":{name:"錦西店",phone:"02-25627728",address:"台北市中山區錦西街14-1號B1.1F"},
+  "446":{name:"新民生店",phone:"02-27457288",address:"台北市松山區民生東路五段119-2號1樓、B1"},
+  "448":{name:"深坑店",phone:"02-26620708",address:"新北市深坑區北深路三段305號1樓"},
+  "454":{name:"林口竹林店",phone:"02-86012806",address:"新北市林口區中正路332號1、2樓"},
+  "457":{name:"三重重陽店",phone:"02-29893181",address:"新北市三重區重陽路2段51號1、2樓"},
+  "461":{name:"青海店",phone:"04-27061777",address:"台中市西屯區青海路二段225號"},
+  "462":{name:"萬丹店",phone:"08-7776322",address:"屏東縣萬丹鄉西環路803號"},
+  "464":{name:"廣東店",phone:"08-7233595",address:"屏東縣屏東市公園東路69.71號"},
+  "467":{name:"新竹竹科店",phone:"03-5631328",address:"新竹市光復路一段132、134號"},
+  "471":{name:"中埔店",phone:"05-2162226",address:"嘉義市東區吳鳳南路519號"},
+  "474":{name:"慶生店",phone:"05-5320183",address:"雲林縣斗六市慶生路266號1樓"},
+  "475":{name:"永和信義店",phone:"02-29232289",address:"新北市永和區信義路125號1-2F"},
+  "476":{name:"康定店",phone:"07-8122108",address:"高雄市前鎮區康定路168號"},
+  "482":{name:"土城學成店",phone:"02-82617279",address:"新北市土城區學成路68號1-2F"},
+  "483":{name:"台南林森店",phone:"06-2371958",address:"台南市東區林森路2段39號"},
+  "489":{name:"三峽中山店",phone:"02-26725229",address:"新北市三峽區中山路171號1F"},
+  "497":{name:"新和美店",phone:"04-7575660",address:"彰化縣和美鎮鹿和路六段465號"},
+  "499":{name:"文心店",phone:"04-23153618",address:"台中市西屯區文心路3段16 18號"},
+  "500":{name:"WanDau內湖旗",phone:"02-77049777",address:"台北市內湖區堤頂大道一段331號"},
+  "505":{name:"忠孝永春店",phone:"02-27600688",address:"台北市信義區忠孝東路五段297-1號1 2F"},
+  "508":{name:"淡水中山店",phone:"02-26295515",address:"新北市淡水區中山北路二段100號1-2F"},
+  "509":{name:"東英店",phone:"04-22153998",address:"台中市東區自由路4段314號1-2F"},
+  "510":{name:"WanDau文心",phone:"04-37009398",address:"台中市西屯區文心路三段16、18號"},
+  "511":{name:"六甲店",phone:"06-6993003",address:"台南市六甲區中山路137號1F+2F"},
+  "512":{name:"WanDau華榮",phone:"07-5550279",address:"高雄市鼓山區華榮路345號"},
+  "513":{name:"屏東新中正店",phone:"08-7660069",address:"屏東縣屏東市公園路40、42號"},
+  "514":{name:"新花蓮旗艦店",phone:"03-8357016",address:"花蓮縣花蓮市中正路595號1-3樓"},
+  "516":{name:"南港店",phone:"02-26518559",address:"台北市南港區南港路一段173號1樓"},
+  "517":{name:"宜蘭頭城店",phone:"03-9770710",address:"宜蘭縣頭城鎮開蘭路149號"},
+  "518":{name:"新板橋中山店",phone:"02-29506230",address:"新北市板橋區中山路一段51號1-2樓"},
+  "519":{name:"公館店",phone:"037-228358",address:"苗栗縣公館鄉玉泉村玉泉359-5號1樓"},
+  "520":{name:"桃園中平店",phone:"03-2201162",address:"桃園市桃園區中山路675號1-2F"},
+  "523":{name:"龍井店",phone:"04-26366177",address:"台中市龍井區沙田路5段99之1&101號1F"},
+  "524":{name:"鳥松店",phone:"07-7311286",address:"高雄市鳥松區大仁北路31號"},
+  "525":{name:"鹽埕店",phone:"07-5311160",address:"高雄市鹽埕區大勇路110&112號1+2F"},
+  "526":{name:"河西店",phone:"07-5224438",address:"高雄市鼓山區河西一路1471號1F+2F"},
+  "527":{name:"台中嶺東店",phone:"04-23826951",address:"台中市南屯區嶺東路710、720號"},
+  "530":{name:"龍南店",phone:"03-4500819",address:"桃園市平鎮區龍南路155號1F"},
+  "534":{name:"新永和店",phone:"02-89431518",address:"新北市永和區中正路235號1F+2F"},
+  "536":{name:"新長庚店",phone:"03-3182727",address:"桃園市龜山區文化三路383號1樓"},
+  "543":{name:"北投新旗艦店",phone:"02-28958965",address:"台北市北投區大業路452巷6號B1"},
+  "546":{name:"寶山店",phone:"03-3160122",address:"桃園市桃園區寶山街269號"},
+  "549":{name:"新鹽水店",phone:"06-6530618",address:"台南市鹽水區康樂路146之6號"},
+  "550":{name:"新大里店",phone:"04-24837595",address:"台中市大里區中興路二段478之3號"},
+  "552":{name:"新小港店",phone:"07-8033189",address:"高雄市小港區康莊路100號"},
+  "555":{name:"新四維店",phone:"02-22063033",address:"新北市新莊區龍安路297號"},
+  "556":{name:"重義店",phone:"07-3410116",address:"高雄市左營區重義路9號"},
+  "558":{name:"永靖店",phone:"04-8230398",address:"彰化縣永靖鄉東門路95號"},
+  "559":{name:"新西螺店",phone:"05-5876767",address:"雲林縣西螺鎮中山路211-3、213、215號"},
+  "560":{name:"藝文店",phone:"03-3166115",address:"桃園市桃園區中正路1175號"},
+  "561":{name:"內壢忠孝店",phone:"03-4625608",address:"桃園市中壢區忠孝路223號"},
+  "562":{name:"新景美店",phone:"02-29300267",address:"台北市文山區景後街97號"},
+  "563":{name:"新東海店",phone:"04-24625570",address:"台中市西屯區玉門路29號"},
+  "566":{name:"新仁武店",phone:"07-3753035",address:"高雄市仁武區八德南路432號"},
+  "568":{name:"新頭份中央店",phone:"037-665718",address:"苗栗縣頭份市中央路552號"},
+  "569":{name:"泰林店",phone:"02-29095618",address:"新北市泰山區泰林路二段189-191號"},
+  "570":{name:"台南東寧店",phone:"06-2091580",address:"台南市東區東寧路393號"},
+  "572":{name:"新東湖店",phone:"02-77049694",address:"台北市內湖區東湖路96號"},
+  "573":{name:"新大雅店",phone:"04-37077910",address:"台中市大雅區雅環路一段52號"},
+  "575":{name:"桃園民族店",phone:"03-2717273",address:"桃園市桃園區民族路222號"},
+  "576":{name:"新竹民富店",phone:"03-6218203",address:"新竹市經國路二段389號"},
+  "577":{name:"基隆仁二店",phone:"02-77049699",address:"基隆市仁愛區仁二路201號"},
+  "579":{name:"花蓮林森店",phone:"03-8330028",address:"花蓮縣花蓮市林森路216.218號"},
+  "580":{name:"新白河店",phone:"06-6850598",address:"台南市白河區國泰路157號"},
+  "581":{name:"明誠店",phone:"07-3495886",address:"高雄市三民區明誠二路78號"},
+  "583":{name:"永和竹林店",phone:"02-89268868",address:"新北市永和區竹林路167號"},
+  "585":{name:"大社店",phone:"07-3551886",address:"高雄市大社區大新路 19號"},
+  "587":{name:"文賢店",phone:"06-2585008",address:"台南市北區文賢路417號"},
+  "588":{name:"泰山明志店",phone:"02-29083669",address:"新北市泰山區明志路三段126號"},
+  "589":{name:"三重重新店",phone:"02-29791119",address:"新北市三重區重新路二段116、118號"},
+  "590":{name:"台中五權店",phone:"04-23807979",address:"台中市南屯區五權西路二段777號"},
+  "591":{name:"土城中央店",phone:"02-22608118",address:"新北市土城區中央路二段165.167號"},
+  "592":{name:"永康大灣店",phone:"06-2058808",address:"台南市永康區大灣路798巷17號"},
+  "593":{name:"仁武中華店",phone:"07-3717968",address:"高雄市仁武區中華路351號"},
+  "595":{name:"平鎮環南店",phone:"03-4010484",address:"桃園市平鎮市環南路二段27號"},
+  "596":{name:"樹林旗艦店",phone:"02-26870298",address:"新北市樹林區中山路一段35號"},
+  "597":{name:"中清店",phone:"04-24261688",address:"台中市北屯區中清路二段743號"},
+  "598":{name:"台中超越店",phone:"04-23280572",address:"台中市南屯區大墩路888號"},
+  "599":{name:"神山超越店",phone:"03-5504598",address:"新竹縣竹北市莊敬南路23號"},
+  "611":{name:"羅東光榮",phone:"03-9502808",address:"宜蘭縣羅東鎮光榮路480號"},
+  "612":{name:"花蓮富國店",phone:"03-8570698",address:"花蓮縣花蓮市富國路105號"},
+  "613":{name:"桃園力行店",phone:"03-3690728",address:"桃園市桃園區力行路566號"},
+  "615":{name:"新建工",phone:"07-3821998",address:"高雄市三民區建工路630號"},
+  "616":{name:"台北大龍店",phone:"02-25850598",address:"台北市大同區大龍街227號及229號"},
+  "617":{name:"竹圍自強店",phone:"02-28080568",address:"新北市淡水區自強路106號"},
+  "618":{name:"台北稻香店",phone:"02-25595758",address:"台北市大同區民生西路270號"},
+  "619":{name:"桃園中山店",phone:"03-3350899",address:"桃園市桃園區中山路382號"},
+  "620":{name:"新豐原旗艦店",phone:"04-25235936",address:"台中市豐原區大社街39號"},
+  "621":{name:"斗六鎮南店",phone:"05-5328678",address:"雲林縣斗六市鎮南路319號"},
+  "623":{name:"敦富店",phone:"04-36055528",address:"台中市北屯區敦富路217號"},
+  "625":{name:"沙鹿向上店",phone:"04-26365121",address:"台中市沙鹿區向上路七段100、106號"},
+  "626":{name:"嘉義新港店",phone:"05-3745298",address:"嘉義縣新港鄉中山路72巷2號之3"},
+  "627":{name:"南投名間店",phone:"04-92730558",address:"南投縣名間鄉員集路151之11號"},
+  "628":{name:"員林大道店",phone:"04-7011507",address:"彰化縣員林市員林大道五段1、3、5號"},
+  "629":{name:"楠梓德中店",phone:"07-3602898",address:"高雄市楠梓區德中路512.516號"},
+  "630":{name:"台中甘肅店",phone:"04-23110212",address:"台中市西屯區文心路三段135號1樓"},
+  "631":{name:"至美超越店",phone:"07-5502168",address:"高雄市鼓山區美明路86號"},
+  "633":{name:"湖口中山店",phone:"03-5990922",address:"新竹縣湖口鄉中山路一段772、776號"},
+  "635":{name:"珍德行店",phone:"02-28331259",address:"台北市士林區德行東路226號"},
+  "636":{name:"林口仁愛店",phone:"02-26068572",address:"新北市林口區文化三路一段589號"},
+  "638":{name:"鹿港建中店",phone:"",address:"彰化縣鹿港鎮中正路605號"},
+  "640":{name:"林口長庚院內",phone:"03-2632061",address:"桃園市龜山區復興街5號 醫學大樓B1"},
+  "642":{name:"澄清文山店",phone:"",address:"高雄市三民區澄清路708、710、712號"}
+};
+
+/* ===== 系列歸類規則（精確的放前面；配件放最前）===== */
+const SERIES_RULES = [
+  ["配件 / 保護殼", ["保護殼","鍵盤","雙面夾","pencil","magic","保護貼","掛繩","防護邊框","卡套","trackpad","mouse","編織線"], "🛡️"],
+  ["iPhone 17 Pro Max", ["iphone 17 pro max","17 pro max","17 pm"], "🚀"],
+  ["iPhone 17 Pro", ["iphone 17 pro","17 pro"], "✨"],
+  ["iPhone 17e", ["iphone 17e","17e"], "💰"],
+  ["iPhone 17", ["iphone 17"], "🔥"],
+  ["iPhone Air", ["iphone air"], "💎"],
+  ["iPhone 16e", ["iphone 16e","16e"], "💡"],
+  ["iPhone 16 Plus", ["iphone 16 plus","16 plus"], "🖥️"],
+  ["iPhone 16", ["iphone 16"], "📲"],
+  ["MacBook Air M5", ["mba m5","macbook air"], "💻"],
+  ["MacBook Pro M5", ["mbp m5","macbook pro"], "🚀"],
+  ["MacBook Neo", ["mbn","macbook neo"], "🆕"],
+  ["iMac M4", ["imac"], "🖥️"],
+  ["Mac Studio", ["mac studio","studio display"], "⚡"],
+  ["Mac mini", ["mac mini"], "🍎"],
+  ["iPad Pro M5", ["ipad pro"], "✨"],
+  ["iPad Air M4", ["ipad air","air 11","air 13","air13"], "🎨"],
+  ["iPad mini", ["ipad mini"], "🤏"],
+  ["iPad 11吋", ["ipad 11吋","ipad (a16)"], "📒"],
+  ["Apple Watch Ultra 3", ["aw ultra","ultra 3"], "⛰️"],
+  ["Apple Watch S11", ["aw s11","watch s11"], "⌚"],
+  ["Apple Watch SE 3", ["aw se","watch se"], "💙"],
+  ["AirPods", ["airpods"], "🎧"],
+  ["HomePod", ["homepod"], "🏠"],
+  ["Apple TV", ["apple tv"], "📺"],
+  ["AirTag", ["airtag"], "🔖"],
+];
+const CAMPAIGN_KW = ["現折","滿萬送","%","售完","暫無交期","優惠","出清","送市價"];
+const PRODUCT_RE = /(\d{6})\s+(.+?)\s+([A-Z0-9]+\/A)\s+([\d,]+)(?:\s+([\d,]+)\s+([\d,]+))?/g;
+
+let RESULT = [];
+let SERIES_CACHE = [];  // 解析後的系列原始資料，重新產生用
+
+function num(s){ return s ? parseInt(s.replace(/,/g,"")) : null; }
+
+function matchSeries(name, skipAcc=false){
+  const low = name.toLowerCase();
+  for(const [disp,keys,emo] of SERIES_RULES){
+    if(skipAcc && disp.startsWith("配件")) continue;
+    if(keys.some(k=>low.includes(k))) return [disp,emo];
+  }
+  return [null,null];
+}
+function extractColor(name, seriesName){
+  // Apple Watch SKU 走專用解析（避免錶帶尺寸 S/M、M/L 被誤判為顏色）
+  if(seriesName && seriesName.startsWith("Apple Watch")){
+    return extractWatchColor(name);
+  }
+  let cleaned = name;
+  if(cleaned.includes("-")){
+    const parts = cleaned.split("-").map(p => p.trim());
+    const last = parts[parts.length - 1].replace(/\(.*?\)/g,"").trim();
+    if(SIZE_RE.test(last)){
+      // 末段是尺寸代號 → 剝掉再找
+      cleaned = parts.slice(0, -1).join("-").trim();
+    } else if(last.length >= 1 && last.length <= 8){
+      return last.replace(/\(.*?\)/g,"").trim();
+    }
+  }
+  const m = cleaned.match(/([一-龥]{1,4}色)/);
+  return m ? m[1] : null;
+}
+
+/* === Apple Watch 顏色解析 ===
+   SKU 格式：AW S11 GPS 42/曜石黑鋁/黑運動錶帶-S/M
+   取 / 分段的第 2 段（錶殼）→ 移除尺寸與材質後綴 → 對應 Apple 官方色名 */
+const SIZE_RE = /^(S\/M|M\/L|S\/M\/L|XS|S|M|L|XL|XXL|\d{2,3}mm)$/i;
+const WATCH_COLOR_MAP = {
+  // Apple 官方色名（已從 apple.com/tw 各機型 specs 頁驗證）
+  // Apple Watch SE 3（鋁）
+  "星光": "星光色", "星光色": "星光色",
+  "午夜": "午夜色", "午夜色": "午夜色",
+  // Apple Watch Series 11（鋁）
+  "玫瑰金": "玫瑰金",
+  "銀": "銀色", "銀色": "銀色",
+  "太空灰": "太空灰",
+  "曜石黑": "曜石黑",
+  // Apple Watch Series 11（鈦）
+  "金": "金色", "金色": "金色",
+  "原色": "原色",
+  "石瓦": "石瓦色", "石瓦色": "石瓦色",
+  // Apple Watch Ultra 3（鈦）
+  "黑": "黑色", "黑色": "黑色",
+};
+function extractWatchColor(name){
+  const parts = name.split("/");
+  if(parts.length < 2) return null;
+  let seg = parts[1].trim();
+  // 剝掉尾巴 -S/M、-M/L 等
+  seg = seg.split("-")[0].trim();
+  // 剝掉括號內補充
+  seg = seg.replace(/\(.*?\)/g,"").trim();
+  // 剝掉材質後綴
+  seg = seg.replace(/(鋁金屬|鋁|鈦金屬|鈦|不鏽鋼)$/u, "").trim();
+  if(!seg) return null;
+  return WATCH_COLOR_MAP[seg] || seg;
+}
+
+/* ===== 規格抽取 =====
+   依各產品線回傳「具區別性的規格字串」，用來分組促銷價。
+   回傳空字串代表此產品不分規格（如 AirPods、AirTag 等）。 */
+function extractSpec(name, seriesName){
+  if(!seriesName) return "";
+  if(seriesName.startsWith("Apple Watch")) return extractWatchSpec(name);
+  if(seriesName.startsWith("iPhone"))      return extractIPhoneSpec(name);
+  if(seriesName.startsWith("iPad"))        return extractIPadSpec(name);
+  if(seriesName.startsWith("MacBook") || seriesName.startsWith("iMac")
+     || seriesName.startsWith("Mac Studio") || seriesName.startsWith("Mac mini"))
+    return extractMacSpec(name);
+  return "";
+}
+function extractIPhoneSpec(name){
+  // 例：iPhone 17 Pro Max 256GB-銀色 / iPhone 16e 128G-黑色
+  const m = name.match(/(\d+)\s*(T|G)B?/i);
+  return m ? `${m[1]}${m[2].toUpperCase()}B` : "";
+}
+function extractIPadSpec(name){
+  // 例：iPad Pro 11吋 Wi-Fi 256GB-太空黑 / iPad 11吋 Wi-Fi 128G-銀
+  const conn = (name.match(/Wi-Fi(?:\+Cellular)?|Cellular/i) || [])[0] || "";
+  const cap = name.match(/(\d+)\s*(T|G)B?/i);
+  const capStr = cap ? `${cap[1]}${cap[2].toUpperCase()}B` : "";
+  return [conn, capStr].filter(Boolean).join(" ");
+}
+function extractWatchSpec(name){
+  // 例：AW S11 GPS 42/曜石黑鋁/黑運動錶帶-S/M
+  const size = (name.match(/\s(\d{2})\//) || [])[1];
+  const mat  = (name.match(/(鋁|鈦|不鏽鋼)/) || [])[1];
+  const cell = /Cellular/i.test(name) ? "GPS+Cellular" : (/GPS/.test(name) ? "GPS" : "");
+  return [size?`${size}mm`:"", mat, cell].filter(Boolean).join(" ");
+}
+function extractMacSpec(name){
+  // 例：13.6吋MBA M5/10CPU/8GPU/16G/512G/午夜 → "M5 / 16GB / 512GB"
+  const chip = (name.match(/M\d+(?:\s+(?:Pro|Max|Ultra))?/) || [])[0] || "";
+  const parts = name.split("/").map(p => p.trim());
+  let ram = "", storage = "";
+  for(const p of parts){
+    const gm = p.match(/^(\d+)G$/);
+    const tm = p.match(/^(\d+)T$/);
+    if(gm){
+      const n = +gm[1];
+      // RAM ≤ 128：第一個 G；其餘視為儲存
+      if(n <= 128 && !ram) ram = `${n}GB`;
+      else storage = `${n}GB`;
+    } else if(tm){
+      storage = `${tm[1]}TB`;
+    }
+  }
+  return [chip, ram, storage].filter(Boolean).join(" / ");
+}
+
+/* ===== 規格-促銷價區塊 =====
+   給 tplPro 用。會把同系列下不同規格的最低價列出來。
+   label 例：「▍促銷價」「售價」「促銷價」（不含「：」） */
+function specPriceBlock(specs, fallbackMin, label){
+  const keys = Object.keys(specs || {}).filter(k => k.length > 0);
+  if(keys.length === 0){
+    return fallbackMin ? `${label}：${fmt(fallbackMin)} 起` : null;
+  }
+  const rows = keys.map(k => ({spec:k, min:Math.min(...specs[k].prices)}))
+                  .sort((a,b) => a.min - b.min);
+  if(rows.length === 1){
+    return `${label}：${fmt(rows[0].min)}（${rows[0].spec}）`;
+  }
+  return `${label}（各規格如下）：\n` +
+    rows.map(r => `   • ${r.spec}：${fmt(r.min)}`).join("\n");
+}
+
+function parse(text){
+  const products=[], camps=[];
+  for(let raw of text.split("\n")){
+    const line = raw.trim();
+    if(!line) continue;
+    let m, has=false;
+    PRODUCT_RE.lastIndex=0;
+    while((m=PRODUCT_RE.exec(line))!==null){
+      has=true;
+      const price = num(m[6]) || num(m[4]);
+      products.push({name:m[2].trim(), price});
+    }
+    if(!has && CAMPAIGN_KW.some(k=>line.includes(k))) camps.push(line);
+  }
+  return {products, camps};
+}
+
+function buildSeries(products, camps){
+  const series = {};
+  for(const p of products){
+    const [name,emo] = matchSeries(p.name);
+    if(!name) continue;
+    if(!series[name]) series[name]={name,emoji:emo,prices:[],colors:[],specs:{},count:0,campaign:""};
+    const s=series[name]; s.count++;
+    if(p.price) s.prices.push(p.price);
+    const c=extractColor(p.name, name);
+    if(c && !s.colors.includes(c)) s.colors.push(c);
+    const spec = extractSpec(p.name, name);
+    if(spec && p.price){
+      if(!s.specs[spec]) s.specs[spec] = {prices:[]};
+      s.specs[spec].prices.push(p.price);
+    }
+  }
+  for(const line of camps){
+    const [name] = matchSeries(line, true);
+    if(name && series[name] && !series[name].campaign)
+      series[name].campaign = line.replace(/\s+/g," ").trim();
+  }
+  return Object.values(series);
+}
+
+function fmt(p){ return p ? "$"+p.toLocaleString() : ""; }
+
+/* ===== 文案素材庫 ===== */
+const COPY_CASUAL = {
+  "iPhone 17 Pro Max": {hook:"頂規之王，一次擁有最強！", sell:"鋁金屬一體成型 × A19 Pro × 6.9 吋 OLED 大螢幕，遊戲、追劇、創作一機搞定；4800 萬 Pro 融合相機讓夜景、演唱會、人像通通拍得乾淨銳利！"},
+  "iPhone 17 Pro":     {hook:"專業攝影，盡握掌心 📸", sell:"鋁金屬一體成型搭配 A19 Pro 晶片，4800 萬 Pro 融合相機從日常隨拍到 4K 影片剪輯都駕馭自如；6.3 吋手感剛剛好，Vlogger、攝影玩家、創作者的隨身利器！"},
+  "iPhone 17":         {hook:"今年最值得入手的 iPhone！", sell:"鋁金屬機身、A19 晶片、6.3 吋 OLED，日常拍照、滑社群、追劇、偶爾手遊都流暢無壓力，今年最值得入手的均衡之選！"},
+  "iPhone 17e":        {hook:"高 CP 值首選，聰明入手 💰", sell:"A19 旗艦級晶片、6.1 吋 OLED，預算友善卻不犧牲體驗；第一支新 iPhone、學生族換機、爸媽升級都超適合！"},
+  "iPhone Air":        {hook:"極致輕薄，重新定義隨身 💎", sell:"鈦金屬機身 × A19 Pro × 6.5 吋 120Hz 順暢畫面，輕到放口袋幾乎沒感覺；通勤、出差、外拍最不想被裝備拖累的你就選它！庫存有限要快～"},
+  "iPhone 16e":        {hook:"最超值入門，換機好時機 💡", sell:"完整 iOS 體驗、A18 級效能、預算更輕鬆；小資族換機、第一支智慧手機都好上手，CP 值打趴同價位機型！"},
+  "iPhone 16 Plus":    {hook:"大螢幕大電量，追劇更過癮 🎬", sell:"A18 晶片 × 6.7 吋 OLED 大螢幕 × 超長續航，追劇、看比賽、看 YouTube 像在家看小電視；滑整天也不怕沒電，影音重度玩家最愛！"},
+  "iPhone 16":         {hook:"人氣不敗經典款 📲", sell:"A18 晶片、6.1 吋 OLED，效能穩定、拍照優異；上市熱賣後再加碼下殺，現在入手 CP 值爆表！"},
+  "MacBook Air M5":    {hook:"全新 M5 晶片登場！輕薄再進化 💻", sell:"全新 M5 晶片、無風扇設計、整天用都不發燙；多開瀏覽器、文書、剪 4K 短片、線上會議都流暢，學生上班族最佳生產力夥伴！"},
+  "MacBook Pro M5":    {hook:"為專業而生，創作者旗艦 🚀", sell:"M5 系列晶片，影音剪輯、3D 渲染、程式開發、Logic 音樂製作一機搞定；Liquid Retina XDR 色準絕美，創作者出門就帶它！"},
+  "MacBook Neo":       {hook:"繽紛登場，色彩 × 效能 🎨", sell:"A18 Pro 晶片搭配繽紛配色，輕巧吸睛又能打；文書、影音、追劇通通沒問題，入門價就能擁有完整 macOS 體驗！"},
+  "iMac M4":           {hook:"讓桌面變漂亮的理由 🖥️", sell:"一體成形美學 × M4 效能 × 24 吋 4.5K Retina，居家辦公、線上學習、影音剪輯都流暢；七種繽紛配色點亮你的工作空間！"},
+  "Mac Studio":        {hook:"桌上的怪物級效能 ⚡", sell:"M4 Max / M3 Ultra 火力全開，4K/8K 後製、3D 渲染、AI 模型訓練無壓力；專業工作室、開發團隊、創作者的桌面工作站首選！"},
+  "Mac mini":          {hook:"小體積，大效能 🍎", sell:"M4 / M4 Pro 塞進巴掌大機身，效能直逼桌上型主機；家庭娛樂、文書辦公、輕量剪輯、家庭伺服器都能勝任，CP 值超有感！"},
+  "iPad Pro M5":       {hook:"你的行動工作室 🎨", sell:"M5 × 串聯式 OLED，Procreate 繪圖、剪 4K 影片、Logic 音樂製作都跑得動；搭 Apple Pencil Pro 與妙控鍵盤，就是行動工作站！"},
+  "iPad Air M4":       {hook:"剛剛好的強大，輕巧全能 ✏️", sell:"M4 帶來 Pro 級效能卻價格親民，創作、追劇、手寫筆記、線上課程一台搞定；11 吋或 13 吋任選，學生、創作者最愛！"},
+  "iPad mini":         {hook:"一手掌握的隨身神器 🤏", sell:"A17 Pro × 8.3 吋輕巧機身，單手好握不佔包包；通勤閱讀、漫畫追劇、手遊娛樂、出差筆記都剛剛好！"},
+  "iPad 11吋":         {hook:"全民平板，入手無負擔 📒", sell:"A16 × 11 吋 Liquid Retina，影音追劇、線上學習、繪畫筆記輕鬆勝任；多彩配色任選，全家共用、學生入門都超適合！"},
+  "Apple Watch Ultra 3":{hook:"為極限而生，冒險家的夥伴 ⛰️", sell:"5 級鈦金屬 × S10 × 3000 尼特高亮度螢幕，潛水、登山、馬拉松、越野跑都撐得住；超長續航＋衛星訊息，極限運動家的最佳夥伴！"},
+  "Apple Watch S11":   {hook:"更懂你的健康教練 ❤️", sell:"S10 晶片、全天候健康監測（含睡眠呼吸中止症、心電圖、血氧），運動配速、睡眠品質一目了然；多錶面任搭，健康教練也是時尚配件！"},
+  "Apple Watch SE 3":  {hook:"智慧生活的第一步 💙", sell:"S10 晶片、鋁金屬錶殼，運動追蹤、訊息通知、Apple Pay、健康監測核心功能齊全；第一支 Apple Watch 入門首選！"},
+  "AirPods":           {hook:"聲歷其境，沉浸到底 🎧", sell:"通勤聽 Podcast、健身放歌、追劇開空間音訊、會議降噪，一副耳機全場景包辦；無縫切換 iPhone / iPad / Mac 超方便！"},
+  "HomePod":           {hook:"打造智慧家庭，趁現在 🏠", sell:"飽滿好聲音 × Siri 智慧助理，播音樂、控制家電、廣播留言給家人一句話搞定，讓家更聰明、更有溫度！"},
+  "Apple TV":          {hook:"客廳娛樂全面升級 📺", sell:"4K HDR、杜比視界、Apple Arcade 大螢幕暢玩；搭 AirPlay 從手機秒投電視，客廳影音、家庭電影院、輕度遊戲一機到位！"},
+  "AirTag":            {hook:"東西不再搞丟 🔖", sell:"精準定位小幫手，鑰匙、錢包、行李、後背包通通不再搞丟；忘東忘西族、出差頻繁族、毛小孩主人必備！"},
+  "配件 / 保護殼":      {hook:"新機到手，配件一次配齊 🛡️", sell:"原廠保護殼、保護貼、鍵盤、Pencil、編織線通通有，搭配新機加購享優惠價，保護更完整、生活更便利！"},
+};
+const COPY_PRO = {
+  "iPhone 17 Pro Max": {hook:"iPhone 17 Pro Max｜旗艦規格", sell:"鋁金屬一體成型機身、A19 Pro 晶片、6.9 吋 ProMotion OLED 顯示器與 4800 萬 Pro 融合相機系統；支援 8 倍光學變焦、Apple ProRAW、ProRes 與 4K Dolby Vision 錄影，專業攝影、影音剪輯、行動工作站全面到位。"},
+  "iPhone 17 Pro":     {hook:"iPhone 17 Pro｜專業攝錄", sell:"鋁金屬一體成型機身、A19 Pro 晶片、4800 萬 Pro 融合相機系統、6.3 吋 ProMotion OLED；支援 ProRAW、ProRes 與 4K Dolby Vision 錄影，創作者與專業攝影工作者首選機型。"},
+  "iPhone 17":         {hook:"iPhone 17｜全新世代", sell:"鋁金屬機身、A19 晶片、6.3 吋 OLED 顯示器、4800 萬雙融合相機系統；支援 Apple Intelligence 與空間影片拍攝，日常拍攝、社群應用與行動娛樂全面升級。"},
+  "iPhone 17e":        {hook:"iPhone 17e｜高 CP 值新機", sell:"A19 晶片、6.1 吋 OLED 顯示器、4800 萬主相機；支援完整 iOS 與 Apple Intelligence 功能，預算友善但配備有感升級，適合學生族群與第一次入手 iPhone 的使用者。"},
+  "iPhone Air":        {hook:"iPhone Air｜極致輕薄", sell:"鈦金屬機身、A19 Pro 晶片、6.5 吋 120Hz ProMotion OLED 顯示器；極致輕薄機身搭配旗艦級效能與長效續航，主打商務通勤、行動辦公與輕量隨身的高階使用者。"},
+  "iPhone 16e":        {hook:"iPhone 16e｜入門首選", sell:"A18 晶片、6.1 吋 OLED 顯示器、單鏡頭主相機系統；完整 iOS 體驗、續航穩定、價格親民，預算有限族群與第一支 iPhone 推薦選擇。"},
+  "iPhone 16 Plus":    {hook:"iPhone 16 Plus｜大螢幕長續航", sell:"A18 晶片、6.7 吋超 Retina XDR OLED 顯示器、4800 萬主相機與長效電力；支援空間影片與 Apple Intelligence，影音追劇、社群娛樂與行動辦公主力機型。"},
+  "iPhone 16":         {hook:"iPhone 16｜熱銷經典", sell:"A18 晶片、6.1 吋超 Retina XDR OLED、4800 萬主相機系統；穩定效能與優異拍照表現，全年熱銷的均衡之選，適合日常使用者與換機族群。"},
+  "MacBook Air M5":    {hook:"MacBook Air M5｜輕薄旗艦", sell:"Apple M5 晶片、最高 24GB 統一記憶體、無風扇設計與全天候續航；13.6 / 15.3 吋 Liquid Retina 顯示器，文書處理、影音剪輯、線上會議與輕度開發皆可勝任，行動辦公與學習首選。"},
+  "MacBook Pro M5":    {hook:"MacBook Pro M5｜創作旗艦", sell:"M5 / M5 Pro / M5 Max 晶片可選、Liquid Retina XDR 顯示器最高 1600 尼特峰值亮度；影音剪輯、3D 渲染、AI 開發、音樂製作等專業需求全面勝任，創作者與專業工作者旗艦級行動主機。"},
+  "MacBook Neo":       {hook:"MacBook Neo｜全新登場", sell:"Apple A18 Pro 晶片、13 吋 Liquid Retina 顯示器、90% 再生鋁金屬機身；輕巧設計兼具多彩配色與穩定效能，提供入門 macOS 完整體驗，年輕族群與時尚生產力之選。"},
+  "iMac M4":           {hook:"iMac M4｜一體式桌機", sell:"M4 晶片、24 吋 4.5K Retina 顯示器、500 尼特亮度與廣色域 P3；一體成形美學搭配七種繽紛配色，居家辦公、線上學習、影音剪輯與生活娛樂兼顧。"},
+  "Mac Studio":        {hook:"Mac Studio｜工作站效能", sell:"M4 Max 或 M3 Ultra 晶片、最高 512GB 統一記憶體、Thunderbolt 5 連接埠；4K/8K 影音後製、AI 模型訓練、3D 渲染與大型專案無壓力，專業創作與工作室的桌面工作站首選。"},
+  "Mac mini":          {hook:"Mac mini｜小體積桌機", sell:"M4 或 M4 Pro 晶片、最高 64GB 統一記憶體、Thunderbolt 5（M4 Pro 版本）；極致小巧機身搭配卓越效能，桌上型主機、家庭娛樂、家庭伺服器與輕量影音剪輯皆可勝任。"},
+  "iPad Pro M5":       {hook:"iPad Pro M5｜行動工作站", sell:"Apple M5 晶片、串聯式 OLED Ultra Retina XDR 顯示器；搭配 Apple Pencil Pro 與妙控鍵盤，繪圖、剪輯 4K 影片、Logic Pro 音樂製作與辦公全能勝任，行動工作站等級體驗。"},
+  "iPad Air M4":       {hook:"iPad Air M4｜全能輕巧", sell:"Apple M4 晶片、11 吋或 13 吋 Liquid Retina 顯示器、支援 Apple Pencil Pro；效能接近 Pro 級而價格更親民，創作、學習、辦公與影音兼顧，多彩配色任選。"},
+  "iPad mini":         {hook:"iPad mini｜隨身平板", sell:"A17 Pro 晶片、8.3 吋 Liquid Retina 顯示器、支援 Apple Pencil Pro；輕巧單手可握，閱讀、漫畫、行動辦公與遊戲娛樂皆宜，通勤族與輕量使用者首選。"},
+  "iPad 11吋":         {hook:"iPad（A16）｜入門平板", sell:"A16 晶片、11 吋 Liquid Retina 顯示器、支援 Apple Pencil（USB-C）；日常娛樂、學習筆記、線上課程與影音追劇皆勝任，多彩配色任選，入門平板首選。"},
+  "Apple Watch Ultra 3":{hook:"Apple Watch Ultra 3｜運動旗艦", sell:"5 級鈦金屬錶殼、S10 晶片、3000 尼特峰值亮度螢幕、最長 42 小時續航；支援衛星訊息、潛水、登山、越野跑等極限運動模式，戶外探索與專業運動使用者旗艦。"},
+  "Apple Watch S11":   {hook:"Apple Watch S11｜健康管理", sell:"S10 晶片、全天候 Retina 顯示器、2000 尼特峰值亮度；支援血氧、心電圖、睡眠呼吸中止症與高血壓通知，全方位健康管理與運動追蹤智慧錶。"},
+  "Apple Watch SE 3":  {hook:"Apple Watch SE 3｜入門款", sell:"S10 晶片、鋁金屬錶殼、Retina 顯示器、1000 尼特亮度；完整核心功能、健康追蹤、跌倒偵測與緊急 SOS，價格親民，第一支 Apple Watch 推薦選擇。"},
+  "AirPods":           {hook:"AirPods｜原廠無線耳機", sell:"AirPods 4 / Pro 3 / Max 完整陣容；支援主動式降噪、適應性音訊、空間音訊與 Apple 裝置無縫切換，通勤、運動、辦公與娛樂全場景音訊解決方案。"},
+  "HomePod":           {hook:"HomePod｜智慧音響", sell:"HomePod 第 2 代與 mini 兩款選擇；高傳真音質結合 Siri 智慧助理與家庭中樞功能，居家娛樂與智慧家庭控制一體。"},
+  "Apple TV":          {hook:"Apple TV｜4K 串流", sell:"A15 仿生晶片、4K HDR 支援杜比視界 / HDR10+ / HLG；搭配 tvOS、Apple Arcade、AirPlay 與 Apple Music 5.1 環繞音效，客廳影音與輕度遊戲體驗全面升級。"},
+  "AirTag":            {hook:"AirTag｜精準尋物", sell:"超寬頻晶片精準定位、Find My 全球網路；鑰匙、錢包、行李、寵物項圈等防丟需求最佳搭檔。"},
+  "配件 / 保護殼":      {hook:"原廠配件｜完整保護", sell:"原廠保護殼、保護貼、鍵盤、Apple Pencil、編織線等周邊配件齊全；搭配新機加購享優惠價，提供完整保護與更便利的使用體驗。"},
+};
+const COPY_DEFAULT_CASUAL = {hook:"限時優惠，把握機會！", sell:"超值好物，數量有限售完為止。"};
+const COPY_DEFAULT_PRO = {hook:"限時促銷活動", sell:"優惠商品數量有限，售完為止。"};
+
+/* ===== COPY 資料層：localStorage 持久化 + JSON 匯入匯出 =====
+   COPY_DATA 是目前生效的資料；COPY_CASUAL / COPY_PRO 視為「預設值」。 */
+const COPY_STORE_KEY = "promo_copy_v3";
+function deepClone(o){ return JSON.parse(JSON.stringify(o)); }
+function cloneDefaults(){ return {casual:deepClone(COPY_CASUAL), pro:deepClone(COPY_PRO)}; }
+function loadCopyData(){
+  try{
+    const raw = localStorage.getItem(COPY_STORE_KEY);
+    if(!raw) return null;
+    const data = JSON.parse(raw);
+    if(!data || !data.casual || !data.pro) return null;
+    return data;
+  }catch(e){ return null; }
+}
+function saveCopyData(){
+  try{ localStorage.setItem(COPY_STORE_KEY, JSON.stringify(COPY_DATA)); }catch(e){}
+}
+function isCustomized(){ return localStorage.getItem(COPY_STORE_KEY) !== null; }
+let COPY_DATA = loadCopyData() || cloneDefaults();
+
+function getCopy(name, tone){
+  const set = (COPY_DATA && COPY_DATA[tone]) || (tone==="pro" ? COPY_PRO : COPY_CASUAL);
+  if(set[name]) return set[name];
+  return tone==="pro" ? COPY_DEFAULT_PRO : COPY_DEFAULT_CASUAL;
+}
+
+/* ===== 平台模板 ===== */
+function tplCasual(s, ctx){
+  const {price, camp, colors, deadline, st, c, tag} = ctx;
+  const fb = [
+    `${s.emoji} ${c.hook}`,
+    c.sell,
+    `🎁 ${camp}`,
+    price?`👉 促銷價 ${fmt(price)} 起`:null,
+    colors?`🎨 顏色：${colors}`:null,
+    `⏰ 活動只到 ${deadline}，售完為止，手刀帶走！`,
+    `📩 私訊或來店洽詢，數量有限不等人～`,
+    st
+  ].filter(Boolean).join("\n");
+  const ig = [
+    `${s.emoji} ${c.hook}`,
+    c.sell,
+    `🎁 ${camp}`,
+    price?`➜ ${fmt(price)} 起`:null,
+    `⏰ 只到 ${deadline}，售完不補 🔥`,
+    `#${tag} #蘋果優惠 #限時下殺 #${deadline.replace("/","")}截止`,
+    st
+  ].filter(Boolean).join("\n");
+  const line = [
+    `${s.emoji}【${c.hook}】`,
+    c.sell,
+    `🎁 ${camp}`,
+    price?`💰 ${fmt(price)} 起`:null,
+    `⏰ 只到 ${deadline}，立即把握 👉`,
+    st
+  ].filter(Boolean).join("\n");
+  return {fb, ig, line};
+}
+
+function tplPro(s, ctx){
+  const {price, camp, colors, deadline, st, c, tag} = ctx;
+  const fbPrice   = specPriceBlock(s.specs, price, "▍促銷價");
+  const igPrice   = specPriceBlock(s.specs, price, "售價");
+  const linePrice = specPriceBlock(s.specs, price, "促銷價");
+  const fb = [
+    `【${s.name}】${c.hook}`,
+    c.sell,
+    ``,
+    `▍優惠內容：${camp}`,
+    fbPrice,
+    colors?`▍可選顏色：${colors}`:null,
+    `▍活動期間：至 ${deadline}`,
+    ``,
+    `歡迎來店體驗，或私訊洽詢`,
+    st
+  ].filter(x=>x!==null).join("\n");
+  const ig = [
+    `${s.name}｜${c.hook}`,
+    c.sell,
+    ``,
+    `優惠：${camp}`,
+    igPrice,
+    `活動至 ${deadline}`,
+    ``,
+    `#${tag} #蘋果優惠 #限時促銷`,
+    st
+  ].filter(x=>x!==null).join("\n");
+  const line = [
+    `【${s.name}】${c.hook}`,
+    c.sell,
+    ``,
+    `優惠內容：${camp}`,
+    linePrice,
+    `活動期間：至 ${deadline}`,
+    ``,
+    `歡迎洽詢`,
+    st
+  ].filter(x=>x!==null).join("\n");
+  return {fb, ig, line};
+}
+
+function renderOne(s, period, store, tone){
+  const price = s.prices.length ? Math.min(...s.prices) : null;
+  let camp = s.campaign || (s.name+" 優惠中");
+  const base = s.name.split(" M")[0].trim();
+  for(const pre of [s.name, base]){
+    if(camp.startsWith(pre)){ camp = camp.slice(pre.length).replace(/^[｜|　 ]+/,""); break; }
+  }
+  if(!camp) camp = s.name+" 優惠中";
+  const colors = s.colors.slice(0,6).join("、");
+  const tag = s.name.replace(/ /g,"").replace(/吋/g,"");
+  const st = (store||"").trim() || "{{門市資訊}}";
+  const c = getCopy(s.name, tone);
+  const deadline = period.includes("–") ? period.split("–").pop().trim() : period;
+
+  const ctx = {price, camp, colors, deadline, st, c, tag};
+  const tpl = tone==="pro" ? tplPro(s, ctx) : tplCasual(s, ctx);
+
+  return {
+    name:s.name, emoji:s.emoji, price:fmt(price), priceRaw:price,
+    campaign:camp, colors, deadline, store:st, hook:c.hook, sell:c.sell,
+    fb:tpl.fb, ig:tpl.ig, line:tpl.line,
+    series:s  // 保留原始 series 供重新產生
+  };
+}
+
+function renderAll(series, period, store, tone){
+  return series.map(s=>renderOne(s, period, store, tone));
+}
+
+/* ===== 合併同分類貼文 ===== */
+function cleanCampaign(s){
+  let camp = s.campaign || (s.name+" 優惠中");
+  const base = s.name.split(" M")[0].trim();
+  for(const pre of [s.name, base]){
+    if(camp.startsWith(pre)){ camp = camp.slice(pre.length).replace(/^[｜|　 ]+/,""); break; }
+  }
+  return camp || (s.name+" 優惠中");
+}
+function subBlockCasual(s){
+  const c = getCopy(s.name, "casual");
+  const price = s.prices.length ? Math.min(...s.prices) : null;
+  const camp = cleanCampaign(s);
+  const priceLine = specPriceBlock(s.specs, price, "💰 促銷價");
+  return [
+    `${s.emoji||""} ${s.name}`,
+    c.sell,
+    `🎁 ${camp}`,
+    priceLine
+  ].filter(Boolean).join("\n");
+}
+function subBlockPro(s){
+  const c = getCopy(s.name, "pro");
+  const price = s.prices.length ? Math.min(...s.prices) : null;
+  const camp = cleanCampaign(s);
+  const priceLine = specPriceBlock(s.specs, price, "　▍促銷價");
+  return [
+    `▶ ${s.name}｜${c.hook}`,
+    `　${c.sell}`,
+    `　▍優惠內容：${camp}`,
+    priceLine
+  ].filter(Boolean).join("\n");
+}
+function mergedTplCasual(catName, list, period, deadline, st){
+  const tag = catName.replace(/[\s\W]/g,"");
+  const body = list.map(subBlockCasual).join("\n\n");
+  const fb = [
+    `${catName} 全系列限時優惠 🔥`,
+    `📅 活動期間：${period}`,
+    "",
+    body,
+    "",
+    `⏰ 活動只到 ${deadline}，售完為止，手刀帶走！`,
+    `📩 私訊或來店洽詢，數量有限不等人～`,
+    st
+  ].join("\n");
+  const ig = [
+    `${catName} 全系列限時優惠 🔥`,
+    `📅 至 ${deadline}`,
+    "",
+    body,
+    "",
+    `#${tag}系列 #蘋果優惠 #限時下殺 #${deadline.replace("/","")}截止`,
+    st
+  ].join("\n");
+  const line = [
+    `【${catName} 全系列限時優惠】`,
+    `活動只到 ${deadline}`,
+    "",
+    body,
+    "",
+    `⏰ 立即把握 👉`,
+    st
+  ].join("\n");
+  return {fb, ig, line};
+}
+function mergedTplPro(catName, list, period, deadline, st){
+  const tag = catName.replace(/[\s\W]/g,"");
+  const body = list.map(subBlockPro).join("\n\n");
+  const fb = [
+    `【${catName} 系列｜限時促銷】`,
+    `活動期間：至 ${deadline}`,
+    "",
+    body,
+    "",
+    `歡迎來店體驗，或私訊洽詢`,
+    st
+  ].join("\n");
+  const ig = [
+    `${catName} 系列｜限時促銷`,
+    `活動至 ${deadline}`,
+    "",
+    body,
+    "",
+    `#${tag}系列 #蘋果優惠 #限時促銷`,
+    st
+  ].join("\n");
+  const line = [
+    `【${catName} 系列｜限時促銷】`,
+    `活動期間：至 ${deadline}`,
+    "",
+    body,
+    "",
+    `歡迎洽詢`,
+    st
+  ].join("\n");
+  return {fb, ig, line};
+}
+function renderMerged(catName, list, period, store, tone){
+  const deadline = period.includes("–") ? period.split("–").pop().trim() : period;
+  const st = (store||"").trim() || "{{門市資訊}}";
+  const tpl = tone==="pro"
+    ? mergedTplPro(catName, list, period, deadline, st)
+    : mergedTplCasual(catName, list, period, deadline, st);
+  const allPrices = list.flatMap(s => s.prices);
+  const minPrice = allPrices.length ? Math.min(...allPrices) : null;
+  return {
+    name: `${catName} 系列（合併 ${list.length} 項）`,
+    emoji: catName.split(" ")[0] || "🎉",
+    price: minPrice ? `${fmt(minPrice)} 起` : "",
+    priceRaw: minPrice,
+    campaign: `${catName} 全系列限時優惠`,
+    colors: "",
+    deadline,
+    store: st,
+    hook: "",
+    sell: "",
+    fb: tpl.fb, ig: tpl.ig, line: tpl.line,
+    series: null,
+    merged: true,
+    members: list,
+    categoryName: catName,
+  };
+}
+
+/* ===== UI ===== */
+const $=id=>document.getElementById(id);
+const drop=$("drop"), fileEl=$("file");
+let loadedText="";
+
+drop.onclick=()=>fileEl.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add("hover");};
+drop.ondragleave=()=>drop.classList.remove("hover");
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove("hover");handle(e.dataTransfer.files[0]);};
+fileEl.onchange=e=>handle(e.target.files[0]);
+
+$("plats").onclick=e=>{ if(e.target.classList.contains("chip")) e.target.classList.toggle("on"); };
+$("tones").onclick=e=>{
+  if(!e.target.classList.contains("chip")) return;
+  [...$("tones").children].forEach(c=>c.classList.remove("on"));
+  e.target.classList.add("on");
+};
+
+/* ===== 門市資料庫：店號 → 自動填入門市資訊 ===== */
+const STORE_CODE_KEY = "promo_store_code_v3";
+function fmtStoreInfo(s){
+  return `📍 門市：${s.name}\n☎️ 電話：${s.phone}\n🗺️ 地址：${s.address}`;
+}
+let lastAutoStore = "";  // 上次自動填入的內容，用來判斷是否可覆寫
+
+// 初始化 datalist（autocomplete）
+(function initStoreDatalist(){
+  const dl = $("storecodes");
+  // 依店號數字排序
+  const entries = Object.entries(STORES).sort((a,b)=>
+    a[0].localeCompare(b[0], undefined, {numeric:true})
+  );
+  for(const [code, s] of entries){
+    const opt = document.createElement("option");
+    opt.value = code;
+    opt.textContent = s.name;
+    dl.appendChild(opt);
+  }
+})();
+
+function applyStoreCode(code, force){
+  code = (code||"").trim();
+  const stat = $("storecode-status");
+  if(!code){
+    stat.textContent = "";
+    return;
+  }
+  const s = STORES[code];
+  if(!s){
+    stat.innerHTML = `⚠️ 查無店號 <b>${code}</b>`;
+    stat.style.color = "var(--sub)";
+    return;
+  }
+  stat.innerHTML = `✅ <b>${s.name}</b>　☎ ${s.phone}`;
+  stat.style.color = "var(--brand)";
+  const text = fmtStoreInfo(s);
+  // 只在 textarea 為空、或內容是上次自動填入的、或強制 → 才覆寫
+  const cur = $("store").value;
+  if(force || !cur.trim() || cur === lastAutoStore){
+    $("store").value = text;
+    lastAutoStore = text;
+  }
+  try{ localStorage.setItem(STORE_CODE_KEY, code); }catch(e){}
+}
+
+$("storecode").addEventListener("input", e=>applyStoreCode(e.target.value));
+$("store-reapply").onclick = ()=>{
+  const code = $("storecode").value.trim();
+  if(!code){ alert("請先輸入店號"); return; }
+  applyStoreCode(code, true);
+};
+$("store-clear").onclick = ()=>{
+  $("store").value = "";
+  lastAutoStore = "";
+  $("storecode").value = "";
+  $("storecode-status").textContent = "";
+  try{ localStorage.removeItem(STORE_CODE_KEY); }catch(e){}
+};
+
+// 載入時還原上次選過的店號
+(function restoreStoreCode(){
+  try{
+    const saved = localStorage.getItem(STORE_CODE_KEY);
+    if(saved && STORES[saved]){
+      $("storecode").value = saved;
+      applyStoreCode(saved, true);
+    }
+  }catch(e){}
+})();
+
+function getTone(){
+  const on = $("tones").querySelector(".chip.on");
+  return on ? on.dataset.t : "casual";
+}
+function getPeriod(){ return $("period").value.trim() || "活動期間"; }
+
+async function handle(f){
+  if(!f) return;
+  $("fileinfo").textContent="讀取中… "+f.name;
+  if(f.name.toLowerCase().endsWith(".txt")){
+    loadedText = await f.text();
+  } else {
+    const buf = await f.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    let txt="";
+    for(let i=1;i<=pdf.numPages;i++){
+      const pg=await pdf.getPage(i);
+      const c=await pg.getTextContent();
+      let lines={};
+      for(const it of c.items){
+        const y=Math.round(it.transform[5]);
+        (lines[y]=lines[y]||[]).push(it.str);
+      }
+      Object.keys(lines).sort((a,b)=>b-a).forEach(y=>txt+=lines[y].join(" ")+"\n");
+    }
+    loadedText=txt;
+    const m=f.name.match(/(\d{2})(\d{2})\D+(\d{2})(\d{2})/);
+    if(m && !$("period").value) $("period").value=`${+m[1]}/${+m[2]}–${+m[3]}/${+m[4]}`;
+  }
+  // 解析並建立系列快取，立即顯示篩選 chips
+  const {products,camps}=parse(loadedText);
+  SERIES_CACHE = buildSeries(products,camps);
+  renderSeriesChips(products.length);
+  $("fileinfo").innerHTML="✅ 已載入：<b>"+f.name+"</b>";
+  $("gen").disabled=false;
+}
+
+/* ===== 系列篩選 chips ===== */
+function renderSeriesChips(productCount){
+  const wrap = $("series-filter");
+  const box = $("series-chips");
+  if(!SERIES_CACHE.length){
+    wrap.classList.add("hide");
+    return;
+  }
+  wrap.classList.remove("hide");
+  box.innerHTML = SERIES_CACHE.map(s =>
+    `<div class="chip on series-chip" data-series="${esc(s.name)}">${s.emoji||""} ${esc(s.name)} <span style="opacity:.75;font-size:12px;">×${s.count}</span></div>`
+  ).join("");
+  updateSeriesSummary(productCount);
+  refreshCategoryButtons();
+}
+function updateSeriesSummary(productCount){
+  const total = SERIES_CACHE.length;
+  const on = document.querySelectorAll(".series-chip.on").length;
+  const pc = (productCount!==undefined) ? `（${productCount} 筆商品）` : "";
+  $("series-summary").textContent = `已選 ${on}/${total} 個系列${pc}`;
+}
+$("series-chips").onclick = e=>{
+  const c = e.target.closest(".series-chip");
+  if(!c) return;
+  c.classList.toggle("on");
+  updateSeriesSummary();
+};
+$("series-all").onclick = ()=>{
+  document.querySelectorAll(".series-chip").forEach(c=>c.classList.add("on"));
+  updateSeriesSummary();
+};
+$("series-none").onclick = ()=>{
+  document.querySelectorAll(".series-chip").forEach(c=>c.classList.remove("on"));
+  updateSeriesSummary();
+};
+$("series-invert").onclick = ()=>{
+  document.querySelectorAll(".series-chip").forEach(c=>c.classList.toggle("on"));
+  updateSeriesSummary();
+};
+
+/* ===== 系列分類快速選取 ===== */
+const SERIES_CATEGORIES = {
+  "📱 iPhone":      ["iPhone 17 Pro Max","iPhone 17 Pro","iPhone 17","iPhone 17e","iPhone Air"],
+  "💻 Mac":         ["MacBook Air M5","MacBook Pro M5","MacBook Neo","iMac M4","Mac Studio","Mac mini"],
+  "⌚ Apple Watch": ["Apple Watch Ultra 3","Apple Watch S11","Apple Watch SE 3"],
+  "📲 iPad":        ["iPad Pro M5","iPad Air M4","iPad mini","iPad 11吋"],
+  "🎧 配件":         ["AirPods","Apple TV","AirTag","HomePod","配件 / 保護殼"],
+};
+$("cat-bar").addEventListener("click", e=>{
+  // merge-toggle 走自己的處理（下方），跳過
+  if(e.target.closest("#merge-toggle")) return;
+  const btn = e.target.closest(".cat-btn");
+  if(!btn || btn.classList.contains("disabled")) return;
+  const include = new Set(SERIES_CATEGORIES[btn.dataset.cat] || []);
+  document.querySelectorAll(".series-chip").forEach(c=>{
+    if(include.has(c.dataset.series)) c.classList.add("on");
+    else c.classList.remove("on");
+  });
+  updateSeriesSummary();
+  // 點分類按鈕時自動開啟「合併同分類」
+  setMergeMode(true);
+});
+
+/* ===== 合併同分類切換 ===== */
+let MERGE_MODE = false;
+function setMergeMode(on){
+  MERGE_MODE = on;
+  const btn = $("merge-toggle");
+  if(btn){
+    btn.classList.toggle("on", on);
+    btn.textContent = on ? "🔗 合併同分類 · 開啟中" : "🔗 合併同分類";
+  }
+}
+$("merge-toggle").addEventListener("click", e=>{
+  e.stopPropagation();
+  setMergeMode(!MERGE_MODE);
+});
+function refreshCategoryButtons(){
+  const available = new Set(SERIES_CACHE.map(s => s.name));
+  document.querySelectorAll(".cat-btn").forEach(btn=>{
+    if(btn.id === "merge-toggle") return;  // 切換按鈕不參與 disable 邏輯
+    const list = SERIES_CATEGORIES[btn.dataset.cat] || [];
+    const matches = list.filter(s => available.has(s));
+    btn.classList.toggle("disabled", matches.length === 0);
+    btn.title = matches.length
+      ? `點擊只選此分類（${matches.length} 個系列：${matches.join("、")}）`
+      : "本次 PDF 中無此分類的系列";
+    let num = btn.querySelector(".cat-num");
+    if(matches.length){
+      if(!num){
+        num = document.createElement("span");
+        num.className = "cat-num";
+        btn.appendChild(num);
+      }
+      num.textContent = `(${matches.length})`;
+    } else if(num){
+      num.remove();
+    }
+  });
+}
+
+$("gen").onclick=()=>{
+  if(!SERIES_CACHE.length){
+    const {products,camps}=parse(loadedText);
+    SERIES_CACHE = buildSeries(products,camps);
+    renderSeriesChips(products.length);
+  }
+  const selected = new Set(
+    [...document.querySelectorAll(".series-chip.on")].map(c=>c.dataset.series)
+  );
+  if(!selected.size){
+    alert("請至少選擇一個系列（在上方「偵測到的系列」中勾選）");
+    return;
+  }
+  const filtered = SERIES_CACHE.filter(s => selected.has(s.name));
+  const period = getPeriod();
+  const store = $("store").value;
+  const tone = getTone();
+
+  if(MERGE_MODE){
+    // 依分類分組，未分類者獨立成單則
+    const groups = {};
+    const ungrouped = [];
+    for(const s of filtered){
+      let cat = null;
+      for(const [name, list] of Object.entries(SERIES_CATEGORIES)){
+        if(list.includes(s.name)){ cat = name; break; }
+      }
+      if(cat){ (groups[cat] = groups[cat] || []).push(s); }
+      else { ungrouped.push(s); }
+    }
+    RESULT = [];
+    for(const [cat, list] of Object.entries(groups)){
+      RESULT.push(renderMerged(cat, list, period, store, tone));
+    }
+    for(const s of ungrouped){
+      RESULT.push(renderOne(s, period, store, tone));
+    }
+    const mergedCount = Object.keys(groups).length;
+    $("stat").textContent = `產生 ${RESULT.length} 則貼文（合併 ${mergedCount} 個分類 + ${ungrouped.length} 個獨立系列，${tone==="pro"?"專業":"活潑"}風）`;
+  } else {
+    RESULT = renderAll(filtered, period, store, tone);
+    $("stat").textContent = `產生 ${RESULT.length}/${SERIES_CACHE.length} 個系列（${tone==="pro"?"專業":"活潑"}風）`;
+  }
+  renderOutput();
+  $("dlcsv").classList.remove("hide");
+  $("dlmd").classList.remove("hide");
+  $("dlpng").classList.remove("hide");
+};
+
+function renderOutput(){
+  const plats=[...document.querySelectorAll("#plats .chip.on")].map(c=>c.dataset.p);
+  const out=$("out"); out.innerHTML="";
+  RESULT.forEach((r,i)=>{
+    const blocks=[];
+    const mkBlock = (pl, label, cls) => {
+      if(!plats.includes(pl)) return "";
+      return `<div class="plat" data-pl="${pl}">
+        <span class="plat-tag ${cls}">${label}</span>
+        <span class="plat-actions">
+          <span class="mini-btn" data-act="copy" data-i="${i}" data-pl="${pl}">📋 複製</span>
+          <span class="mini-btn" data-act="png" data-i="${i}" data-pl="${pl}">📷 PNG</span>
+          <span class="mini-btn warn" data-act="regen" data-i="${i}" data-pl="${pl}">🔄 重新產生</span>
+        </span>
+        <pre contenteditable="true" data-i="${i}" data-pl="${pl}">${esc(r[pl])}</pre>
+      </div>`;
+    };
+    blocks.push(mkBlock("fb","FB","fb"));
+    blocks.push(mkBlock("ig","IG","ig"));
+    blocks.push(mkBlock("line","LINE","line"));
+    out.insertAdjacentHTML("beforeend",
+      `<div class="post" data-i="${i}">
+        <div class="post-h">
+          <div class="left"><span>${esc(r.name)}</span><span class="price">${r.price}</span></div>
+          <span class="mini-btn warn" data-act="regen-all" data-i="${i}">🔄 全部重新產生</span>
+        </div>${blocks.join("")}
+       </div>`);
+  });
+}
+
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* 同步 DOM → RESULT（讓 CSV/MD/PNG 拿到使用者編輯後的內容） */
+function syncFromDOM(){
+  document.querySelectorAll("#out pre[contenteditable]").forEach(pre=>{
+    const i = +pre.dataset.i, pl = pre.dataset.pl;
+    if(RESULT[i]) RESULT[i][pl] = pre.innerText;
+  });
+}
+
+/* 事件委派：複製 / PNG / 重新產生 */
+document.addEventListener("click", async e=>{
+  const t = e.target;
+  if(!t.classList.contains("mini-btn")) return;
+  const act = t.dataset.act, i = +t.dataset.i, pl = t.dataset.pl;
+
+  if(act==="copy"){
+    syncFromDOM();
+    await navigator.clipboard.writeText(RESULT[i][pl]);
+    flashBtn(t, "已複製!");
+  } else if(act==="png"){
+    flashBtn(t, "產生中…");
+    syncFromDOM();
+    await downloadPng(i, pl);
+    flashBtn(t, "✅");
+  } else if(act==="regen"){
+    if(!confirm(`重新產生 ${RESULT[i].name} 的 ${pl.toUpperCase()} 貼文？（會覆蓋目前編輯）`)) return;
+    regenerateOne(i, pl);
+  } else if(act==="regen-all"){
+    if(!confirm(`重新產生 ${RESULT[i].name} 的全部平台貼文？（會覆蓋目前編輯）`)) return;
+    regenerateOne(i, null);
+  }
+});
+
+function flashBtn(el, txt){
+  const old = el.textContent;
+  el.textContent = txt;
+  setTimeout(()=>{ el.textContent = old; }, 1200);
+}
+
+function regenerateOne(i, platform){
+  const r = RESULT[i];
+  let fresh;
+  if(r.merged){
+    fresh = renderMerged(r.categoryName, r.members, getPeriod(), $("store").value, getTone());
+  } else {
+    const s = SERIES_CACHE.find(x=>x.name===r.name) || r.series;
+    if(!s) return;
+    fresh = renderOne(s, getPeriod(), $("store").value, getTone());
+  }
+  if(platform){
+    RESULT[i][platform] = fresh[platform];
+    const pre = document.querySelector(`#out pre[data-i="${i}"][data-pl="${platform}"]`);
+    if(pre) pre.innerText = fresh[platform];
+  } else {
+    RESULT[i] = fresh;
+    ["fb","ig","line"].forEach(pl=>{
+      const pre = document.querySelector(`#out pre[data-i="${i}"][data-pl="${pl}"]`);
+      if(pre) pre.innerText = fresh[pl];
+    });
+  }
+}
+
+/* ===== 下載 CSV / MD ===== */
+$("dlmd").onclick=()=>{
+  syncFromDOM();
+  const period=$("period").value.trim()||"";
+  let md=`# 📣 促銷貼文包｜${period}\n\n`;
+  RESULT.forEach(r=>{
+    md+=`\n## ${r.name}（${r.campaign}）\n\n**【FB】**\n${r.fb}\n\n**【IG】**\n${r.ig}\n\n**【LINE】**\n${r.line}\n\n---\n`;
+  });
+  download("貼文包.md", md, "text/markdown");
+};
+$("dlcsv").onclick=()=>{
+  syncFromDOM();
+  const q=s=>`"${(s||"").replace(/"/g,'""')}"`;
+  let csv="﻿系列,促銷價,活動,FB貼文,IG貼文,LINE貼文\n";
+  RESULT.forEach(r=>{csv+=[r.name,r.price,r.campaign,r.fb,r.ig,r.line].map(q).join(",")+"\n";});
+  download("貼文包.csv", csv, "text/csv");
+};
+function download(name,content,type){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=name; a.click();
+}
+
+/* ===== PNG 匯出 ===== */
+function buildImageCard(r, platform){
+  const platLabel = {fb:"FB", ig:"IG", line:"LINE"}[platform];
+  const platClass = {fb:"img-fb", ig:"img-ig", line:"img-line"}[platform];
+  const colors = r.colors ? `<div class="ic-colors">🎨 ${esc(r.colors)}</div>` : "";
+  const price = r.price ? `<div class="ic-price">${esc(r.price)} 起</div>` : "";
+  return `<div class="img-card ${platClass}">
+    <div class="ic-platform">${platLabel}</div>
+    <div class="ic-top">
+      <div class="ic-emo">${r.emoji||"🎉"}</div>
+      <div class="ic-name">${esc(r.name)}</div>
+    </div>
+    <div class="ic-hook">${esc(r.hook)}</div>
+    <div class="ic-sell">${esc(r.sell)}</div>
+    <div class="ic-box">
+      <div class="ic-camp">🎁 ${esc(r.campaign)}</div>
+      ${price}
+      ${colors}
+    </div>
+    <div class="ic-foot">
+      <div class="ic-deadline">⏰ 活動至 ${esc(r.deadline||"")}</div>
+      <div>${esc(r.store||"")}</div>
+    </div>
+  </div>`;
+}
+
+function buildMergedImageCard(r, platform){
+  const platLabel = {fb:"FB", ig:"IG", line:"LINE"}[platform];
+  const platClass = {fb:"img-fb", ig:"img-ig", line:"img-line"}[platform];
+  const catName = r.categoryName || r.name;
+  // 從分類名字取出 emoji 和文字
+  const emojiMatch = catName.match(/^([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}])\s*/u);
+  const catEmoji = emojiMatch ? emojiMatch[1] : (r.emoji || "🎉");
+  const catText = emojiMatch ? catName.slice(emojiMatch[0].length).trim() : catName;
+  const tone = getTone();
+
+  const items = r.members.map(s => {
+    const price = s.prices.length ? Math.min(...s.prices) : null;
+    const priceStr = price ? `${fmt(price)} 起` : "";
+    const c = getCopy(s.name, tone);
+    const camp = cleanCampaign(s);
+    return `<div class="im-item">
+      <div class="im-item-row">
+        <span class="im-item-emoji">${s.emoji||"🍎"}</span>
+        <span class="im-item-name">${esc(s.name)}</span>
+        ${priceStr ? `<span class="im-item-price">${esc(priceStr)}</span>` : ""}
+      </div>
+      <div class="im-item-sell">${esc(c.sell)}</div>
+      <div class="im-item-camp">🎁 ${esc(camp)}</div>
+    </div>`;
+  }).join("");
+
+  return `<div class="img-merged ${platClass}">
+    <div class="ic-platform">${platLabel}</div>
+    <div class="im-head">
+      <div class="im-emo">${catEmoji}</div>
+      <div class="im-title-block">
+        <div class="im-cat">${esc(catText)} 系列</div>
+        <div class="im-subtitle">全系列限時促銷</div>
+      </div>
+      <div class="im-deadline">⏰ 至 ${esc(r.deadline||"")}</div>
+    </div>
+    <div class="im-list">${items}</div>
+    <div class="im-foot">${esc(r.store||"")}</div>
+  </div>`;
+}
+
+async function downloadPng(i, platform){
+  const r = RESULT[i];
+  const stage = $("stage");
+  stage.innerHTML = r.merged ? buildMergedImageCard(r, platform) : buildImageCard(r, platform);
+  const node = stage.firstElementChild;
+  // 等下一個 frame 讓樣式套上
+  await new Promise(r=>requestAnimationFrame(r));
+  const canvas = await html2canvas(node, {scale:1, backgroundColor:null, useCORS:true, logging:false});
+  const safe = r.name.replace(/[\/\\:*?"<>|]/g,"_");
+  await new Promise(res=>canvas.toBlob(b=>{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(b);
+    a.download=`${safe}_${platform.toUpperCase()}.png`;
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); res(); }, 200);
+  }, "image/png"));
+  stage.innerHTML="";
+}
+
+$("dlpng").onclick = async ()=>{
+  syncFromDOM();
+  const plats=[...document.querySelectorAll("#plats .chip.on")].map(c=>c.dataset.p);
+  const btn = $("dlpng");
+  const total = RESULT.length * plats.length;
+  let done = 0;
+  btn.disabled = true;
+  for(let i=0;i<RESULT.length;i++){
+    for(const pl of plats){
+      done++;
+      btn.textContent = `📦 產生中… ${done}/${total}`;
+      await downloadPng(i, pl);
+    }
+  }
+  btn.disabled = false;
+  btn.textContent = "📦 下載全部圖片(PNG)";
+};
+
+/* ===== 文案素材庫編輯器 ===== */
+function updateCopyStatus(){
+  const el = $("copy-status");
+  if(isCustomized()){
+    el.textContent = "已自訂";
+    el.className = "copy-status custom";
+  } else {
+    el.textContent = "使用預設";
+    el.className = "copy-status default";
+  }
+}
+function currentEditorTone(){
+  const on = $("copy-tone-tabs").querySelector(".chip.on");
+  return on ? on.dataset.t : "casual";
+}
+function renderCopyTable(){
+  const tone = currentEditorTone();
+  const tbody = $("copy-table-body");
+  tbody.innerHTML = "";
+  const names = SERIES_RULES.map(r => r[0]);
+  // 也納入自訂資料中存在但不在 SERIES_RULES 的條目（以免遺漏）
+  for(const k of Object.keys(COPY_DATA[tone]||{})){
+    if(!names.includes(k)) names.push(k);
+  }
+  for(const name of names){
+    const entry = (COPY_DATA[tone] && COPY_DATA[tone][name]) || {hook:"",sell:""};
+    const tr = document.createElement("tr");
+    tr.innerHTML =
+      `<td class="series-name">${esc(name)}</td>
+       <td><textarea data-field="hook" data-name="${esc(name)}" rows="2">${esc(entry.hook||"")}</textarea></td>
+       <td><textarea data-field="sell" data-name="${esc(name)}" rows="2">${esc(entry.sell||"")}</textarea></td>`;
+    tbody.appendChild(tr);
+  }
+}
+$("copy-toggle").onclick = ()=>{
+  const ed = $("copy-editor");
+  const willShow = ed.classList.contains("hide");
+  ed.classList.toggle("hide");
+  $("copy-toggle").textContent = willShow ? "📕 收合編輯器" : "📝 編輯文案";
+  if(willShow) renderCopyTable();
+};
+$("copy-tone-tabs").onclick = e=>{
+  if(!e.target.classList.contains("chip")) return;
+  [...$("copy-tone-tabs").children].forEach(c=>c.classList.remove("on"));
+  e.target.classList.add("on");
+  renderCopyTable();
+};
+$("copy-table-body").addEventListener("input", e=>{
+  const ta = e.target;
+  if(ta.tagName !== "TEXTAREA") return;
+  const tone = currentEditorTone();
+  const name = ta.dataset.name;
+  const field = ta.dataset.field;
+  if(!COPY_DATA[tone]) COPY_DATA[tone] = {};
+  if(!COPY_DATA[tone][name]) COPY_DATA[tone][name] = {hook:"",sell:""};
+  COPY_DATA[tone][name][field] = ta.value;
+  saveCopyData();
+  updateCopyStatus();
+});
+$("copy-export").onclick = ()=>{
+  const json = JSON.stringify(COPY_DATA, null, 2);
+  download("copy_data.json", json, "application/json");
+};
+$("copy-import-btn").onclick = ()=>$("copy-import").click();
+$("copy-import").onchange = async e=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  try{
+    const txt = await f.text();
+    const data = JSON.parse(txt);
+    if(!data || typeof data !== "object" || !data.casual || !data.pro)
+      throw new Error("JSON 必須包含 casual 與 pro 兩個物件");
+    COPY_DATA = data;
+    saveCopyData();
+    updateCopyStatus();
+    if(!$("copy-editor").classList.contains("hide")) renderCopyTable();
+    alert(`✅ 已載入文案素材庫\n活潑風：${Object.keys(data.casual).length} 筆\n專業風：${Object.keys(data.pro).length} 筆`);
+  }catch(err){
+    alert("❌ JSON 格式錯誤：" + err.message);
+  }
+  e.target.value = "";
+};
+$("copy-reset").onclick = ()=>{
+  if(!confirm("確定重置為內建預設文案？目前所有自訂內容會被清除（建議先點「下載 JSON」備份）。")) return;
+  localStorage.removeItem(COPY_STORE_KEY);
+  COPY_DATA = cloneDefaults();
+  updateCopyStatus();
+  if(!$("copy-editor").classList.contains("hide")) renderCopyTable();
+};
+updateCopyStatus();
+</script>
+</body>
+</html>
