@@ -8,13 +8,13 @@
 
 ## 🚀 快速上手
 
-**線上版**（需連網載入 pdf.js、html2canvas 兩個外部 lib）：
-- 下載 `促銷貼文產生器_v3.html`（約 80 KB）
-- 雙擊開啟
+### 線上使用（推薦）
+直接在瀏覽器開：**https://muska126-gif.github.io/promo-post-generator/**
 
-**離線版**（所有依賴內嵌，斷網可用）：
-- 下載 `促銷貼文產生器_離線版_v3.html`（約 2 MB）
-- 雙擊開啟
+（首次載入需連網取得 pdf.js 與 html2canvas 兩個外部 lib）
+
+### 離線使用
+到 [Releases](https://github.com/muska126-gif/promo-post-generator/releases) 下載 `促銷貼文產生器_離線版_v3.html`（約 2 MB），雙擊開啟即可。所有依賴內嵌，斷網也能用。
 
 兩版功能完全一樣。
 
@@ -39,8 +39,8 @@
 
 ```
 promo-post-generator/
-├── 促銷貼文產生器_v3.html            線上版（需外網載 pdf.js）
-├── 促銷貼文產生器_離線版_v3.html      離線版（單檔可用）
+├── index.html                       線上版（GitHub Pages 直接執行）
+├── 促銷貼文產生器_離線版_v3.html      離線版（單檔可用，離線環境下載使用）
 ├── README.md                        本檔
 ├── CHANGELOG.md                     版本變更歷程
 └── .gitignore
