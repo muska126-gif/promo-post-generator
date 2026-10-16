@@ -596,6 +596,8 @@ const STORES = {
 /* ===== 系列歸類規則（精確的放前面；配件放最前）===== */
 const SERIES_RULES = [
   ["配件 / 保護殼", ["保護殼","鍵盤","雙面夾","pencil","magic","保護貼","掛繩","防護邊框","卡套","trackpad","mouse","編織線"], "🛡️"],
+  ["iPhone 18 Pro Max", ["iphone 18 pro max","18 pro max","18 pm"], "🚀"],
+  ["iPhone 18 Pro", ["iphone 18 pro","18 pro"], "🔥"],
   ["iPhone 17 Pro Max", ["iphone 17 pro max","17 pro max","17 pm"], "🚀"],
   ["iPhone 17 Pro", ["iphone 17 pro","17 pro"], "✨"],
   ["iPhone 17e", ["iphone 17e","17e"], "💰"],
@@ -614,7 +616,9 @@ const SERIES_RULES = [
   ["iPad Air M4", ["ipad air","air 11","air 13","air13"], "🎨"],
   ["iPad mini", ["ipad mini"], "🤏"],
   ["iPad 11吋", ["ipad 11吋","ipad (a16)"], "📒"],
-  ["Apple Watch Ultra 3", ["aw ultra","ultra 3"], "⛰️"],
+  ["Apple Watch Ultra 4", ["aw ultra 4","ultra 4"], "🏔️"],
+  ["Apple Watch Ultra 3", ["aw ultra 3","ultra 3"], "⛰️"],
+  ["Apple Watch S12", ["aw s12","watch s12"], "⌚"],
   ["Apple Watch S11", ["aw s11","watch s11"], "⌚"],
   ["Apple Watch SE 3", ["aw se","watch se"], "💙"],
   ["AirPods", ["airpods"], "🎧"],
@@ -807,6 +811,8 @@ function fmt(p){ return p ? "$"+p.toLocaleString() : ""; }
 
 /* ===== 文案素材庫 ===== */
 const COPY_CASUAL = {
+  "iPhone 18 Pro Max": {hook:"Pro 邁大步，巔峰之作 🚀", sell:"A20 Pro 晶片蒸發冷卻、4800 萬可變光圈相機，電池續航最長 43 小時影片播放；勃根地紅、冰川藍四色絕美登場，效能與影像獨冠 iPhone，追劇、手遊、拍大片一次滿足！"},
+  "iPhone 18 Pro":     {hook:"Pro 邁大步，效能新境界 🔥", sell:"A20 Pro 晶片搭配鋁金屬一體成型機身，4800 萬可變光圈相機拍夜景、人像超乾淨；勃根地紅、冰川藍、銀、黑四色任選，專業創作者的隨身首選！"},
   "iPhone 17 Pro Max": {hook:"頂規之王，一次擁有最強！", sell:"鋁金屬一體成型 × A19 Pro × 6.9 吋 OLED 大螢幕，遊戲、追劇、創作一機搞定；4800 萬 Pro 融合相機讓夜景、演唱會、人像通通拍得乾淨銳利！"},
   "iPhone 17 Pro":     {hook:"專業攝影，盡握掌心 📸", sell:"鋁金屬一體成型搭配 A19 Pro 晶片，4800 萬 Pro 融合相機從日常隨拍到 4K 影片剪輯都駕馭自如；6.3 吋手感剛剛好，Vlogger、攝影玩家、創作者的隨身利器！"},
   "iPhone 17":         {hook:"今年最值得入手的 iPhone！", sell:"鋁金屬機身、A19 晶片、6.3 吋 OLED，日常拍照、滑社群、追劇、偶爾手遊都流暢無壓力，今年最值得入手的均衡之選！"},
@@ -825,7 +831,9 @@ const COPY_CASUAL = {
   "iPad Air M4":       {hook:"剛剛好的強大，輕巧全能 ✏️", sell:"M4 帶來 Pro 級效能卻價格親民，創作、追劇、手寫筆記、線上課程一台搞定；11 吋或 13 吋任選，學生、創作者最愛！"},
   "iPad mini":         {hook:"一手掌握的隨身神器 🤏", sell:"A17 Pro × 8.3 吋輕巧機身，單手好握不佔包包；通勤閱讀、漫畫追劇、手遊娛樂、出差筆記都剛剛好！"},
   "iPad 11吋":         {hook:"全民平板，入手無負擔 📒", sell:"A16 × 11 吋 Liquid Retina，影音追劇、線上學習、繪畫筆記輕鬆勝任；多彩配色任選，全家共用、學生入門都超適合！"},
+  "Apple Watch Ultra 4": {hook:"極限再進化，Ultra 4 登場 🏔️", sell:"全新鈦金屬錶殼搭配更強效能，半透明海洋錶帶、沙色越野錶環、勃根地紅高山錶環多款任選；潛水、登山、越野跑全撐得住，極限運動家的最強新夥伴！"},
   "Apple Watch Ultra 3":{hook:"為極限而生，冒險家的夥伴 ⛰️", sell:"5 級鈦金屬 × S10 × 3000 尼特高亮度螢幕，潛水、登山、馬拉松、越野跑都撐得住；超長續航＋衛星訊息，極限運動家的最佳夥伴！"},
+  "Apple Watch S12":   {hook:"健康旗艦再升級，S12 新上市 ⌚", sell:"全新深古銅、淺金配色與陶瓷、鈦金屬尊爵錶款，全天候健康監測（含睡眠、心電圖、血氧）；運動配速、健康數據一手掌握，健康旗艦也是時尚單品！"},
   "Apple Watch S11":   {hook:"更懂你的健康教練 ❤️", sell:"S10 晶片、全天候健康監測（含睡眠呼吸中止症、心電圖、血氧），運動配速、睡眠品質一目了然；多錶面任搭，健康教練也是時尚配件！"},
   "Apple Watch SE 3":  {hook:"智慧生活的第一步 💙", sell:"S10 晶片、鋁金屬錶殼，運動追蹤、訊息通知、Apple Pay、健康監測核心功能齊全；第一支 Apple Watch 入門首選！"},
   "AirPods":           {hook:"聲歷其境，沉浸到底 🎧", sell:"通勤聽 Podcast、健身放歌、追劇開空間音訊、會議降噪，一副耳機全場景包辦；無縫切換 iPhone / iPad / Mac 超方便！"},
@@ -835,6 +843,8 @@ const COPY_CASUAL = {
   "配件 / 保護殼":      {hook:"新機到手，配件一次配齊 🛡️", sell:"原廠保護殼、保護貼、鍵盤、Pencil、編織線通通有，搭配新機加購享優惠價，保護更完整、生活更便利！"},
 };
 const COPY_PRO = {
+  "iPhone 18 Pro Max": {hook:"iPhone 18 Pro Max｜巔峰旗艦", sell:"A20 Pro 晶片採蒸發冷卻設計、4800 萬可變光圈融合相機、6.9 吋 ProMotion OLED 顯示器；影片播放最長 43 小時續航，支援 Pro 控制項目、ProRAW、ProRes 與 4K 120fps Dolby Vision 錄影，專業攝影與行動工作站全面到位。"},
+  "iPhone 18 Pro":     {hook:"iPhone 18 Pro｜專業效能", sell:"A20 Pro 晶片、鋁金屬一體成型機身、4800 萬可變光圈相機系統與 6.3 吋 ProMotion OLED；提供勃根地紅、冰川藍、銀、黑四色，支援 ProRAW、ProRes 與全新 Pro 攝影控制，專業創作者首選。"},
   "iPhone 17 Pro Max": {hook:"iPhone 17 Pro Max｜旗艦規格", sell:"鋁金屬一體成型機身、A19 Pro 晶片、6.9 吋 ProMotion OLED 顯示器與 4800 萬 Pro 融合相機系統；支援 8 倍光學變焦、Apple ProRAW、ProRes 與 4K Dolby Vision 錄影，專業攝影、影音剪輯、行動工作站全面到位。"},
   "iPhone 17 Pro":     {hook:"iPhone 17 Pro｜專業攝錄", sell:"鋁金屬一體成型機身、A19 Pro 晶片、4800 萬 Pro 融合相機系統、6.3 吋 ProMotion OLED；支援 ProRAW、ProRes 與 4K Dolby Vision 錄影，創作者與專業攝影工作者首選機型。"},
   "iPhone 17":         {hook:"iPhone 17｜全新世代", sell:"鋁金屬機身、A19 晶片、6.3 吋 OLED 顯示器、4800 萬雙融合相機系統；支援 Apple Intelligence 與空間影片拍攝，日常拍攝、社群應用與行動娛樂全面升級。"},
@@ -853,7 +863,9 @@ const COPY_PRO = {
   "iPad Air M4":       {hook:"iPad Air M4｜全能輕巧", sell:"Apple M4 晶片、11 吋或 13 吋 Liquid Retina 顯示器、支援 Apple Pencil Pro；效能接近 Pro 級而價格更親民，創作、學習、辦公與影音兼顧，多彩配色任選。"},
   "iPad mini":         {hook:"iPad mini｜隨身平板", sell:"A17 Pro 晶片、8.3 吋 Liquid Retina 顯示器、支援 Apple Pencil Pro；輕巧單手可握，閱讀、漫畫、行動辦公與遊戲娛樂皆宜，通勤族與輕量使用者首選。"},
   "iPad 11吋":         {hook:"iPad（A16）｜入門平板", sell:"A16 晶片、11 吋 Liquid Retina 顯示器、支援 Apple Pencil（USB-C）；日常娛樂、學習筆記、線上課程與影音追劇皆勝任，多彩配色任選，入門平板首選。"},
+  "Apple Watch Ultra 4": {hook:"Apple Watch Ultra 4｜極限運動旗艦", sell:"全新鈦金屬錶殼與升級效能，支援衛星訊息、潛水電腦、進階運動模式；半透明海洋錶帶、越野錶環、高山錶環與米蘭錶環多款選擇，戶外探索與專業運動使用者的最新旗艦。"},
   "Apple Watch Ultra 3":{hook:"Apple Watch Ultra 3｜運動旗艦", sell:"5 級鈦金屬錶殼、S10 晶片、3000 尼特峰值亮度螢幕、最長 42 小時續航；支援衛星訊息、潛水、登山、越野跑等極限運動模式，戶外探索與專業運動使用者旗艦。"},
+  "Apple Watch S12":   {hook:"Apple Watch S12｜健康旗艦", sell:"全天候 Retina 顯示器搭配鋁金屬、鈦金屬與陶瓷多種錶殼，支援血氧、心電圖、睡眠呼吸中止症與高血壓通知；深古銅、淺金等全新配色，全方位健康管理與運動追蹤新世代旗艦。"},
   "Apple Watch S11":   {hook:"Apple Watch S11｜健康管理", sell:"S10 晶片、全天候 Retina 顯示器、2000 尼特峰值亮度；支援血氧、心電圖、睡眠呼吸中止症與高血壓通知，全方位健康管理與運動追蹤智慧錶。"},
   "Apple Watch SE 3":  {hook:"Apple Watch SE 3｜入門款", sell:"S10 晶片、鋁金屬錶殼、Retina 顯示器、1000 尼特亮度；完整核心功能、健康追蹤、跌倒偵測與緊急 SOS，價格親民，第一支 Apple Watch 推薦選擇。"},
   "AirPods":           {hook:"AirPods｜原廠無線耳機", sell:"AirPods 4 / Pro 3 / Max 完整陣容；支援主動式降噪、適應性音訊、空間音訊與 Apple 裝置無縫切換，通勤、運動、辦公與娛樂全場景音訊解決方案。"},

@@ -4,6 +4,20 @@
 
 ---
 
+## v3.7 · 2026-10-16
+
+### 新增（新品上市）
+- **iPhone 18 Pro / iPhone 18 Pro Max**：新增分類規則與 CASUAL／PRO 兩套文案
+- **Apple Watch Ultra 4**：新增分類規則與文案
+- **Apple Watch S12**：新增分類規則與文案
+- AirPods 5、Mac mini M6、Mac Studio M5 經既有規則自動涵蓋
+
+### 修正
+- 修正 **Apple Watch Ultra 3** 關鍵字 `aw ultra` 過寬，會誤抓 Ultra 4 的問題 → 收窄為精確比對（`ultra 4` / `ultra 3`）
+- 新機型分類順序置於同系列舊款之前（18 Pro Max → 18 Pro；Ultra 4 → Ultra 3；S12 → S11），避免誤判
+
+---
+
 ## v3.6 · 2026-07-09
 
 ### 新增
