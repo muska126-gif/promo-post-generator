@@ -4,6 +4,22 @@
 
 ---
 
+## v3.8 · 2026-10-16
+
+### Mac 產品線更新（依 apple.com/tw 官網規格）
+- **MacBook Pro**：系列由「MacBook Pro M5」改為「MacBook Pro」，涵蓋 14 吋 M6 / M5 Pro / M5 Max 與 16 吋 M5 Pro / M5 Max
+- **iMac M6**：新增系列（M6 晶片、Wi‑Fi 7、七色），與庫存 iMac M4 分開
+- **Mac mini M6**：新增系列（M6 / M5 Pro），與庫存 Mac mini M4 分開
+- **Mac Studio**：文案更新為 M5 Max / M5 Ultra
+- **Studio Display**：獨立成單一系列，不再併入 Mac Studio（原本會拉低 Mac Studio 的「起價」）
+- MacBook Air M5、MacBook Neo 文案依官網規格修訂
+
+### 修正
+- **MacBook Neo 被誤判為 iPhone 18 Pro**：品名「MBN A18 Pro」含「18 pro」，iPhone 18 Pro 規則改為只比對完整的「iphone 18 pro」
+- 已自訂文案（localStorage）的使用者，新系列會退回使用內建預設文案，不再顯示通用文案
+
+---
+
 ## v3.7 · 2026-10-16
 
 ### 新增（新品上市）

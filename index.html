@@ -596,8 +596,8 @@ const STORES = {
 /* ===== 系列歸類規則（精確的放前面；配件放最前）===== */
 const SERIES_RULES = [
   ["配件 / 保護殼", ["保護殼","鍵盤","雙面夾","pencil","magic","保護貼","掛繩","防護邊框","卡套","trackpad","mouse","編織線"], "🛡️"],
-  ["iPhone 18 Pro Max", ["iphone 18 pro max","18 pro max","18 pm"], "🚀"],
-  ["iPhone 18 Pro", ["iphone 18 pro","18 pro"], "🔥"],
+  ["iPhone 18 Pro Max", ["iphone 18 pro max"], "🚀"],
+  ["iPhone 18 Pro", ["iphone 18 pro"], "🔥"],
   ["iPhone 17 Pro Max", ["iphone 17 pro max","17 pro max","17 pm"], "🚀"],
   ["iPhone 17 Pro", ["iphone 17 pro","17 pro"], "✨"],
   ["iPhone 17e", ["iphone 17e","17e"], "💰"],
@@ -607,11 +607,14 @@ const SERIES_RULES = [
   ["iPhone 16 Plus", ["iphone 16 plus","16 plus"], "🖥️"],
   ["iPhone 16", ["iphone 16"], "📲"],
   ["MacBook Air M5", ["mba m5","macbook air"], "💻"],
-  ["MacBook Pro M5", ["mbp m5","macbook pro"], "🚀"],
+  ["MacBook Pro", ["mbp","macbook pro"], "🚀"],
   ["MacBook Neo", ["mbn","macbook neo"], "🆕"],
+  ["iMac M6", ["imac 24吋 m6","imac m6"], "🖥️"],
   ["iMac M4", ["imac"], "🖥️"],
-  ["Mac Studio", ["mac studio","studio display"], "⚡"],
-  ["Mac mini", ["mac mini"], "🍎"],
+  ["Studio Display", ["studio display"], "🖼️"],
+  ["Mac Studio", ["mac studio"], "⚡"],
+  ["Mac mini M6", ["mac mini m6","mac mini m5 pro"], "🍎"],
+  ["Mac mini M4", ["mac mini"], "🍎"],
   ["iPad Pro M5", ["ipad pro"], "✨"],
   ["iPad Air M4", ["ipad air","air 11","air 13","air13"], "🎨"],
   ["iPad mini", ["ipad mini"], "🤏"],
@@ -821,12 +824,15 @@ const COPY_CASUAL = {
   "iPhone 16e":        {hook:"最超值入門，換機好時機 💡", sell:"完整 iOS 體驗、A18 級效能、預算更輕鬆；小資族換機、第一支智慧手機都好上手，CP 值打趴同價位機型！"},
   "iPhone 16 Plus":    {hook:"大螢幕大電量，追劇更過癮 🎬", sell:"A18 晶片 × 6.7 吋 OLED 大螢幕 × 超長續航，追劇、看比賽、看 YouTube 像在家看小電視；滑整天也不怕沒電，影音重度玩家最愛！"},
   "iPhone 16":         {hook:"人氣不敗經典款 📲", sell:"A18 晶片、6.1 吋 OLED，效能穩定、拍照優異；上市熱賣後再加碼下殺，現在入手 CP 值爆表！"},
-  "MacBook Air M5":    {hook:"全新 M5 晶片登場！輕薄再進化 💻", sell:"全新 M5 晶片、無風扇設計、整天用都不發燙；多開瀏覽器、文書、剪 4K 短片、線上會議都流暢，學生上班族最佳生產力夥伴！"},
-  "MacBook Pro M5":    {hook:"為專業而生，創作者旗艦 🚀", sell:"M5 系列晶片，影音剪輯、3D 渲染、程式開發、Logic 音樂製作一機搞定；Liquid Retina XDR 色準絕美，創作者出門就帶它！"},
-  "MacBook Neo":       {hook:"繽紛登場，色彩 × 效能 🎨", sell:"A18 Pro 晶片搭配繽紛配色，輕巧吸睛又能打；文書、影音、追劇通通沒問題，入門價就能擁有完整 macOS 體驗！"},
-  "iMac M4":           {hook:"讓桌面變漂亮的理由 🖥️", sell:"一體成形美學 × M4 效能 × 24 吋 4.5K Retina，居家辦公、線上學習、影音剪輯都流暢；七種繽紛配色點亮你的工作空間！"},
-  "Mac Studio":        {hook:"桌上的怪物級效能 ⚡", sell:"M4 Max / M3 Ultra 火力全開，4K/8K 後製、3D 渲染、AI 模型訓練無壓力；專業工作室、開發團隊、創作者的桌面工作站首選！"},
-  "Mac mini":          {hook:"小體積，大效能 🍎", sell:"M4 / M4 Pro 塞進巴掌大機身，效能直逼桌上型主機；家庭娛樂、文書辦公、輕量剪輯、家庭伺服器都能勝任，CP 值超有感！"},
+  "MacBook Air M5":    {hook:"輕薄再進化，M5 全天候好夥伴 💻", sell:"M5 晶片、無風扇設計整天用都安靜不發燙；最長 18 小時影片播放、Wi‑Fi 7 超快連線，13 吋 1.23 公斤好攜帶，15 吋大螢幕追劇更爽，學生上班族最佳生產力夥伴！"},
+  "MacBook Pro":       {hook:"為專業而生，創作者旗艦 🚀", sell:"14 吋全新 M6 版最長 24 小時續航，M5 Pro / M5 Max 火力全開；Liquid Retina XDR 1600 尼特峰值亮度，影音剪輯、3D 渲染、程式開發、音樂製作一機搞定，創作者出門就帶它！"},
+  "MacBook Neo":       {hook:"繽紛登場，色彩 × 效能 🎨", sell:"A18 Pro 晶片搭配銀、胭粉、青橘黃、靛青四色，輕巧吸睛又能打；文書、影音、追劇通通沒問題，入門價就能擁有完整 macOS 體驗！"},
+  "iMac M6":           {hook:"全新 iMac M6，讓桌面亮起來 🖥️", sell:"M6 晶片 × 24 吋 4.5K Retina，七色繽紛任選；Wi‑Fi 7、六揚聲器、1200 萬 Center Stage 鏡頭，居家辦公、線上學習、視訊追劇一機搞定！"},
+  "iMac M4":           {hook:"一體成形美學，超值入手 🖥️", sell:"M4 晶片 × 24 吋 4.5K Retina，多彩配色點亮工作空間；居家辦公、線上學習、影音剪輯都流暢，現在入手 CP 值更有感！"},
+  "Studio Display":    {hook:"5K 好螢幕，Mac 最佳拍檔 🖼️", sell:"27 吋 5K Retina 顯示器，色彩精準、細節銳利；修圖、剪片、看設計稿都清清楚楚，搭配 Mac 桌面質感直接升級！"},
+  "Mac Studio":        {hook:"桌上的怪物級效能 ⚡", sell:"全新 M5 Max / M5 Ultra 火力全開，最高 512GB 統一記憶體、Thunderbolt 5；8K 後製、3D 渲染、AI 模型運算無壓力，專業工作室的桌面工作站首選！"},
+  "Mac mini M6":       {hook:"全新 Mac mini，小體積大效能 🍎", sell:"M6 / M5 Pro 塞進巴掌大機身，Wi‑Fi 7 加持效能直逼大桌機；家庭娛樂、文書辦公、剪片、AI 應用都能勝任，最超值的 Mac 桌機！"},
+  "Mac mini M4":       {hook:"小體積，超值入手 🍎", sell:"M4 / M4 Pro 巴掌大機身效能不打折；文書辦公、家庭娛樂、輕量剪輯都順手，數量有限 CP 值超有感！"},
   "iPad Pro M5":       {hook:"你的行動工作室 🎨", sell:"M5 × 串聯式 OLED，Procreate 繪圖、剪 4K 影片、Logic 音樂製作都跑得動；搭 Apple Pencil Pro 與妙控鍵盤，就是行動工作站！"},
   "iPad Air M4":       {hook:"剛剛好的強大，輕巧全能 ✏️", sell:"M4 帶來 Pro 級效能卻價格親民，創作、追劇、手寫筆記、線上課程一台搞定；11 吋或 13 吋任選，學生、創作者最愛！"},
   "iPad mini":         {hook:"一手掌握的隨身神器 🤏", sell:"A17 Pro × 8.3 吋輕巧機身，單手好握不佔包包；通勤閱讀、漫畫追劇、手遊娛樂、出差筆記都剛剛好！"},
@@ -853,12 +859,15 @@ const COPY_PRO = {
   "iPhone 16e":        {hook:"iPhone 16e｜入門首選", sell:"A18 晶片、6.1 吋 OLED 顯示器、單鏡頭主相機系統；完整 iOS 體驗、續航穩定、價格親民，預算有限族群與第一支 iPhone 推薦選擇。"},
   "iPhone 16 Plus":    {hook:"iPhone 16 Plus｜大螢幕長續航", sell:"A18 晶片、6.7 吋超 Retina XDR OLED 顯示器、4800 萬主相機與長效電力；支援空間影片與 Apple Intelligence，影音追劇、社群娛樂與行動辦公主力機型。"},
   "iPhone 16":         {hook:"iPhone 16｜熱銷經典", sell:"A18 晶片、6.1 吋超 Retina XDR OLED、4800 萬主相機系統；穩定效能與優異拍照表現，全年熱銷的均衡之選，適合日常使用者與換機族群。"},
-  "MacBook Air M5":    {hook:"MacBook Air M5｜輕薄旗艦", sell:"Apple M5 晶片、最高 24GB 統一記憶體、無風扇設計與全天候續航；13.6 / 15.3 吋 Liquid Retina 顯示器，文書處理、影音剪輯、線上會議與輕度開發皆可勝任，行動辦公與學習首選。"},
-  "MacBook Pro M5":    {hook:"MacBook Pro M5｜創作旗艦", sell:"M5 / M5 Pro / M5 Max 晶片可選、Liquid Retina XDR 顯示器最高 1600 尼特峰值亮度；影音剪輯、3D 渲染、AI 開發、音樂製作等專業需求全面勝任，創作者與專業工作者旗艦級行動主機。"},
-  "MacBook Neo":       {hook:"MacBook Neo｜全新登場", sell:"Apple A18 Pro 晶片、13 吋 Liquid Retina 顯示器、90% 再生鋁金屬機身；輕巧設計兼具多彩配色與穩定效能，提供入門 macOS 完整體驗，年輕族群與時尚生產力之選。"},
-  "iMac M4":           {hook:"iMac M4｜一體式桌機", sell:"M4 晶片、24 吋 4.5K Retina 顯示器、500 尼特亮度與廣色域 P3；一體成形美學搭配七種繽紛配色，居家辦公、線上學習、影音剪輯與生活娛樂兼顧。"},
-  "Mac Studio":        {hook:"Mac Studio｜工作站效能", sell:"M4 Max 或 M3 Ultra 晶片、最高 512GB 統一記憶體、Thunderbolt 5 連接埠；4K/8K 影音後製、AI 模型訓練、3D 渲染與大型專案無壓力，專業創作與工作室的桌面工作站首選。"},
-  "Mac mini":          {hook:"Mac mini｜小體積桌機", sell:"M4 或 M4 Pro 晶片、最高 64GB 統一記憶體、Thunderbolt 5（M4 Pro 版本）；極致小巧機身搭配卓越效能，桌上型主機、家庭娛樂、家庭伺服器與輕量影音剪輯皆可勝任。"},
+  "MacBook Air M5":    {hook:"MacBook Air M5｜輕薄旗艦", sell:"Apple M5 晶片（10 核心 CPU）、16GB 統一記憶體起、無風扇設計；13.6 / 15.3 吋 Liquid Retina 顯示器、影片播放最長 18 小時、Wi‑Fi 7 與 Thunderbolt 4，文書處理、影音剪輯與線上會議皆可勝任，行動辦公與學習首選。"},
+  "MacBook Pro":       {hook:"MacBook Pro｜創作旗艦", sell:"14 吋提供 M6 / M5 Pro / M5 Max，16 吋提供 M5 Pro / M5 Max；Liquid Retina XDR 顯示器 1600 尼特峰值亮度、ProMotion 120Hz，M6 機型影片播放最長 24 小時，M5 Pro / Max 配備 Thunderbolt 5，創作者與專業工作者旗艦級行動主機。"},
+  "MacBook Neo":       {hook:"MacBook Neo｜全新登場", sell:"Apple A18 Pro 晶片、13 吋 Liquid Retina 顯示器，銀、胭粉、青橘黃、靛青四色；輕巧設計兼具穩定效能，提供完整 macOS 體驗，年輕族群與入門使用者之選。"},
+  "iMac M6":           {hook:"iMac M6｜全新一體式桌機", sell:"Apple M6 晶片（10 或 12 核心 CPU）、16GB 統一記憶體起、24 吋 4.5K Retina 顯示器；Wi‑Fi 7、六揚聲器音響系統與 1200 萬像素 Center Stage 相機，七色可選，居家辦公、線上學習與影音娛樂兼顧。"},
+  "iMac M4":           {hook:"iMac M4｜一體式桌機", sell:"M4 晶片、24 吋 4.5K Retina 顯示器、500 尼特亮度與廣色域 P3；一體成形設計搭配多彩配色，居家辦公、線上學習與影音剪輯兼顧，超值入手選擇。"},
+  "Studio Display":    {hook:"Studio Display｜5K 專業顯示器", sell:"27 吋 5K Retina 顯示器，色彩精準、細節清晰；與 Mac 完美搭配，適合修圖、影音剪輯、設計與多工作業的桌面工作環境。"},
+  "Mac Studio":        {hook:"Mac Studio｜工作站效能", sell:"Apple M5 Max 或 M5 Ultra 晶片、最高 512GB 統一記憶體、Thunderbolt 5 與 10Gb 乙太網路；M5 Ultra 最多支援 8 部外接顯示器，8K 影音後製、AI 運算、3D 渲染與大型專案無壓力，專業工作室首選。"},
+  "Mac mini M6":       {hook:"Mac mini｜全新小體積桌機", sell:"Apple M6 或 M5 Pro 晶片、16GB 統一記憶體起、Wi‑Fi 7；M5 Pro 機型配備 Thunderbolt 5，極致小巧機身搭配卓越效能，桌上型主機、家庭娛樂與影音剪輯皆可勝任。"},
+  "Mac mini M4":       {hook:"Mac mini M4｜超值小桌機", sell:"M4 或 M4 Pro 晶片、極致小巧機身；文書辦公、家庭娛樂與輕量影音剪輯皆可勝任，現貨數量有限，超值入手選擇。"},
   "iPad Pro M5":       {hook:"iPad Pro M5｜行動工作站", sell:"Apple M5 晶片、串聯式 OLED Ultra Retina XDR 顯示器；搭配 Apple Pencil Pro 與妙控鍵盤，繪圖、剪輯 4K 影片、Logic Pro 音樂製作與辦公全能勝任，行動工作站等級體驗。"},
   "iPad Air M4":       {hook:"iPad Air M4｜全能輕巧", sell:"Apple M4 晶片、11 吋或 13 吋 Liquid Retina 顯示器、支援 Apple Pencil Pro；效能接近 Pro 級而價格更親民，創作、學習、辦公與影音兼顧，多彩配色任選。"},
   "iPad mini":         {hook:"iPad mini｜隨身平板", sell:"A17 Pro 晶片、8.3 吋 Liquid Retina 顯示器、支援 Apple Pencil Pro；輕巧單手可握，閱讀、漫畫、行動辦公與遊戲娛樂皆宜，通勤族與輕量使用者首選。"},
@@ -900,6 +909,9 @@ let COPY_DATA = loadCopyData() || cloneDefaults();
 function getCopy(name, tone){
   const set = (COPY_DATA && COPY_DATA[tone]) || (tone==="pro" ? COPY_PRO : COPY_CASUAL);
   if(set[name]) return set[name];
+  // 已自訂過文案的使用者，localStorage 裡沒有新系列 → 退回內建預設文案
+  const builtin = tone==="pro" ? COPY_PRO : COPY_CASUAL;
+  if(builtin[name]) return builtin[name];
   return tone==="pro" ? COPY_DEFAULT_PRO : COPY_DEFAULT_CASUAL;
 }
 
@@ -1302,7 +1314,7 @@ $("series-invert").onclick = ()=>{
 /* ===== 系列分類快速選取 ===== */
 const SERIES_CATEGORIES = {
   "📱 iPhone":      ["iPhone 18 Pro Max","iPhone 18 Pro","iPhone 17 Pro Max","iPhone 17 Pro","iPhone 17","iPhone 17e","iPhone Air","iPhone 16e","iPhone 16 Plus","iPhone 16"],
-  "💻 Mac":         ["MacBook Air M5","MacBook Pro M5","MacBook Neo","iMac M4","Mac Studio","Mac mini"],
+  "💻 Mac":         ["MacBook Air M5","MacBook Pro","MacBook Neo","iMac M6","iMac M4","Mac Studio","Mac mini M6","Mac mini M4","Studio Display"],
   "⌚ Apple Watch": ["Apple Watch Ultra 4","Apple Watch Ultra 3","Apple Watch S12","Apple Watch S11","Apple Watch SE 3"],
   "📲 iPad":        ["iPad Pro M5","iPad Air M4","iPad mini","iPad 11吋"],
   "🎧 配件":         ["AirPods","Apple TV","AirTag","HomePod","配件 / 保護殼"],
